@@ -2,7 +2,7 @@ Test-Compta-Demat
 =================
 Le programme est disponible sous la forme d'une distribution exécutable livrée dans une archive zip, et une archive autoextractive 
 
-Récupération  du programme windows xp / windows 7 (32 bits) [cas général]
+Récupération  du programme windows xp / windows 7 (32 bits)  
 -----------------------------------------------------------
 se rendre dans le dossier 1_00_04/
 clic droit sur le fichier Testeur_1_00_04_win_x86.exe pour l'enregistrer sur le poste de travail, puis lancer l'exécution 
