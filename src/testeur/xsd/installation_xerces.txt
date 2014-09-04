@@ -1,0 +1,11 @@
+StdInParse.exe -n -f -s -v=never < 123456789FEC20111231_1.xml
+
+-- installer 
+
+http://apache.mirrors.multidist.eu//xerces/c/3/binaries/xerces-c-3.1.1-x86-windows-vc-8.0.zip
+
+http://apache.mirrors.multidist.eu//xerces/c/3/binaries/xerces-c-3.1.1-x86_64-windows-vc-8.0.zip
+
+
+version visualC8 (déjà présent via postgres)
+
