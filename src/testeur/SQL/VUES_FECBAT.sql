@@ -1,47 +1,47 @@
 -- attention syntaxe :  
--- fichier lu à 3 endroits dans le code source, syntaxe strict obligatoire
-
+-- fichier lu Ã  3 endroits dans le code source, syntaxe strict obligatoire
 
 
 DROP VIEW IF EXISTS vue_journal_<cloture>;
--- modif 27/06/2014 : concaténation cpt gén(sans enlever les 0) - cpt aux
+
+-- modif 27/06/2014 : concatÃ©nation cpt gÃ©n(sans enlever les 0) - cpt aux
 CREATE OR REPLACE VIEW vue_journal_<cloture> AS
 SELECT t.id_ligne AS "ID",
 t.code_jrnal AS "Code Journal",
 t.lib_jrnal AS "Journal",
-t.num_ecr AS "Numéro Ecriture",
+t.num_ecr AS "NumÃ©ro Ecriture",
 t.date_cpt AS "Date comptable",
-ltrim(t.num_cpte_gen,'0'::text) AS "Numéro Compte",
-t.lib_cpte_gen AS "Libellé Compte",
-((t.num_cpte_gen) ||'-'||(t.num_cpt_aux)) AS "Numéro Compte Gén-Aux",
-((t.lib_cpte_gen)||'-'||(t.lib_cpt_aux)) AS "Libellé Compte Gén-Aux",
-t.mtn_debit AS "Débit",
-t.mtn_credit AS "Crédit",
-t.lib_ecriture AS "Libellé",
-t.date_piece AS "Date Pièce",
-t.num_piece AS "Numéro Pièce",
+ltrim(t.num_cpte_gen,'0'::text) AS "NumÃ©ro Compte",
+t.lib_cpte_gen AS "LibellÃ© Compte",
+t.num_cpte_gen||COALESCE('-'||t.num_cpt_aux,'') AS "NumÃ©ro Compte GÃ©n-Aux",
+t.lib_cpte_gen||COALESCE('-'||t.lib_cpt_aux,'') AS "LibellÃ© Compte GÃ©n-Aux",
+t.mtn_debit AS "DÃ©bit",
+t.mtn_credit AS "CrÃ©dit",
+t.lib_ecriture AS "LibellÃ©",
+t.date_piece AS "Date PiÃ¨ce",
+t.num_piece AS "NumÃ©ro PiÃ¨ce",
 t.code_lettrage AS "Lettrage",
-t.num_cpt_aux AS "Numéro Compte auxiliaire",
-t.lib_cpt_aux AS "Libellé Compte auxiliaire",
+t.num_cpt_aux AS "NumÃ©ro Compte auxiliaire",
+t.lib_cpt_aux AS "LibellÃ© Compte auxiliaire",
 CASE
-            WHEN t.ecr_type = 1 OR t.ecr_type = 11 THEN 'Clôture'::text
+            WHEN t.ecr_type = 1 OR t.ecr_type = 11 THEN 'ClÃ´ture'::text
             WHEN t.ecr_type = 2 OR t.ecr_type = 12 THEN 'A. Nouveau'::text
             ELSE ''::text
-END AS "Type écriture",
+END AS "Type Ã©criture",
 CASE 
-WHEN t.ecr_type = 11 OR t.ecr_type = 12 THEN 'Générée'::text 
+WHEN t.ecr_type = 11 OR t.ecr_type = 12 THEN 'GÃ©nÃ©rÃ©e'::text 
 ELSE ''::text 
-END AS "Générée lecode",
+END AS "GÃ©nÃ©rÃ©e lecode",
 t.date_lettrage AS "Date Lettrage",
 t.valid_date AS "Date Validation",
 t.mtn_devise AS "Montant Devise",
 t.idevise AS "Devise",
-t.paiement_date AS "Date Règlement",
-t.paiement_mode as "Mode Règlement",
-t.prestation as "Nature Opération",
+t.paiement_date AS "Date RÃ¨glement",
+t.paiement_mode as "Mode RÃ¨glement",
+t.prestation as "Nature OpÃ©ration",
 CASE 
-			WHEN t.alto2_taux_tva > 0::numeric THEN 'Créditeur' 
-			WHEN t.alto2_taux_tva < 0::numeric THEN 'Débiteur' 
+			WHEN t.alto2_taux_tva > 0::numeric THEN 'CrÃ©diteur' 
+			WHEN t.alto2_taux_tva < 0::numeric THEN 'DÃ©biteur' 
 			ELSE 'Nul' 
 END AS "Sens TVA",
 abs(t.alto2_taux_tva) AS "Taux TVA" 
