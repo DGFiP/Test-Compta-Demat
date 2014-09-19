@@ -14,12 +14,13 @@ puis cliquer sur le bouton vert qui correspond à la version windows en 64 bits 
 
 Récupération des sources du programme
 =====================================
-se rendre dans le dossier src/
+Pour les visualiser se rendre dans le dossier src/
 Les sources utilisées sont disponibles pour adaptation sur des environnements différents
 cloner le dépôt git (cf doc de git)
 
 Documentations
 ============
-voir le contenu du dossier doc
+voir le contenu du dossier doc :
+pour visualiser un pdf, il faut le télécharger (cliquer sur View Raw) puis ouvrir le fichier téléchargé.
 
 
