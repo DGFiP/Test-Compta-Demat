@@ -199,7 +199,6 @@ for ( $i = 0 ; $i <= $#lst_rev ; $i++ ) {
 }
 $lbl_rb[0]->select();
 
-# ACCES LOCAL/DISTANT
 my $butlocal;
 my $butdistant;
 my $fen4;
