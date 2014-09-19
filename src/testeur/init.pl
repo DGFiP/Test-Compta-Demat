@@ -532,6 +532,7 @@ sub traitement() {
                 $fen->update;
                 return;
             }
+	    
 
 #RG:F:transformation entete champs arrete => champs base:I
 #$rc = system("trt_entete$exe_ou_pl   -o \"$entetefile\"  -f  \"$plat_file\"  -s \"$sep\" -n $log_seq 2>${err_file}_entete"            );
