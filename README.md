@@ -13,15 +13,15 @@ sur le site "http://www.cecill.info".
 
 Récupération des sources du programme
 =====================================
-Pour les visualiser se rendre dans le dossier src/
-Les sources utilisées sont disponibles pour adaptation sur des environnements différents
-cloner le dépôt git (cf doc de git)
+Pour les visualiser se rendre dans le dossier src/.
+Les sources utilisées sont disponibles pour adaptation sur des environnements différents.
+Pour cela, cloner le dépôt git (cf doc de git).
 
 Récupération des distributions Windows
 =====================================
 Le programme est disponible sous la forme d'une distribution exécutable livrée dans une archive autoextractive.
 
-Récupération du programme windows 32 bits
+Version windows 32 bits
 -----------------------------------------------------------
 Cliquer sur release pour voir les exécutables windows
 puis cliquer sur le bouton vert qui correspond à la version windows (x86.exe) pour le télécharger.
