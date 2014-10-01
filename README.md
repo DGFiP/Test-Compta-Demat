@@ -3,7 +3,7 @@ Test-Compta-Demat
 
 Copyright 2014 Direction Générale des Finances Publiques - France
 
-Ce logiciel est un programme informatique servant à vérifier la conformité des fichiers d'écritures comptables (FEC) avec l'article A47 A-1 du livre des procédures fiscales. 
+Ce logiciel est un programme informatique servant à contrôler le respect des normes des fichiers d'écritures comptables (FEC) conformément aux dispositions de l'article A.47 A-1 du livre des procédures fiscales.  
 
 Ce logiciel est régi par la licence CeCILL V2.1 soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
