@@ -446,6 +446,10 @@ sub modif_acces_direct() {
 	}
 
 	$buffer =~ s/${er1}/${er2}/;
+	my $er3=$er2 ;
+	$er3 =~  s/ *//g;
+	
+	
 
 	if ( length($buffer) != $taille_buf ) { close FT; return 1; }
 
@@ -456,6 +460,11 @@ sub modif_acces_direct() {
 	if ( ( !defined $nb ) || ( $nb == 0 ) ) {
 		return 2;
 	}
+	
+	if ( $buffer !~ m/${er3}/ ) {
+	    return 3 ;
+	}
+	
 	return 0;
 }
 

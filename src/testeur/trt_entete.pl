@@ -189,12 +189,12 @@ sub sub_entete() {
             else {
                 @valeurs = split $separateur, $line;
 
-                if ( uc( $valeurs[$rang_c] ) eq "D"
+                if ( uc( $valeurs[$rang_c] ) =~ /^\s*D\s*$/
                     || $valeurs[$rang_c] =~ /^\s*\+1\s*$/ )
                 {
                     $valeurs[$rang_c] = 0;
                 }
-                elsif ( uc( $valeurs[$rang_c] ) eq "C"
+                elsif ( uc( $valeurs[$rang_c] ) =~ /^\s*C\s*$/
                     || $valeurs[$rang_c] =~ /^\s*\-1\s*$/ )
                 {
                     $valeurs[$rang_c] = $valeurs[$rang_d];

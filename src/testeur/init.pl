@@ -460,6 +460,12 @@ sub traitement() {
                     &trace( "Problème sur la gestion du lien file xsd",
                         "finko" );
                 }
+		elsif ( $cont_xsd == 3 ) {
+			&faire_pdf(
+"Le fichier XML ne respecte pas les spécifications publiés sur le site impots.gouv.fr, relatives à la structure du fichier XSD."
+                    );
+			exit 1;
+		}
 
                 $tar = Archive::Tar->new("formats_xsd.tar");
                 &trace( $tar->error, "finko" ) unless $tar->extract;

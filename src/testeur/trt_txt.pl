@@ -145,7 +145,10 @@ our $doublon                 = 0;
     our $rang_d      = 0;
     our $rang_c      = 0;
     our $type_champs = "Text";
-    
+# Ajout SPECs 22 11/01/2015
+our %Donnees_Absentes;
+our $don_abs;
+
 #our $conn_local ;
 #our $conn_distant;
 #our $ldap_distant;
@@ -218,7 +221,6 @@ open( STRUC, "< fmt_arrete" )
 my $bil_rang = 0;
 
 
-
 #RG:T:Lire en log entete si fichier initial D/C ou M/S:I
 $REQ =
 "SELECT distinct(texte_log) from log_alim  where id_trait = '$log_seq' and type_log='D' ";
@@ -258,6 +260,25 @@ close(STRUC);
 
 open( SQL, "< SQL/FEC${cat_revenus}.sql" )
   or die "Impossible de trouver SQL/FEC${cat_revenus}.sql";
+
+# Ajout SPECs 22 11/01/2015
+if ( ${cat_revenus} eq "COM" || ${cat_revenus} eq "BIC") {
+	$Donnees_Absentes{"code_jrnal"} = 0;
+	$Donnees_Absentes{"lib_jrnal"} = 0;
+	$Donnees_Absentes{"lib_cpte_gen"} = 0;
+	$Donnees_Absentes{"num_piece"} = 0;
+	$Donnees_Absentes{"date_piece"} = 0;
+	$Donnees_Absentes{"lib_ecriture"} = 0;
+	$Donnees_Absentes{"valid_date"} = 0;
+}
+if ( ${cat_revenus} eq "BAT" || ${cat_revenus} eq "BNCT") {
+	$Donnees_Absentes{"num_piece"} = 0;
+	$Donnees_Absentes{"date_piece"} = 0;
+# Specs 22 modifiée le 23/01/2015 (on ne doit plus controler les champs suivants...)
+#	$Donnees_Absentes{"paiement_date"} = 0;
+#	$Donnees_Absentes{"paiement_mode"} = 0;
+}
+# Fin ajout SPECs 22 11/01/2015
 
 #  20130821 : SQL est parcouru pour chercher les champs des lignes contenant ',' ne contenant pas ';' ni serial
 local $/="\n";
@@ -659,7 +680,6 @@ sub controle() {
                 if (   $valeurs[$i] =~ m/^[0-9 ]+$/
                     && $valeurs[$i] =~ m/[0-9]{1,}/ )
                 {
-
                     $type_champs = "bigint";
                 }
 
@@ -708,7 +728,19 @@ sub controle() {
                 $nb_errs++;
             }
             else {
-
+# Ajout SPECs 22 11/01/2015
+		$don_abs = lc($champs[$i]);
+		if ( defined($Donnees_Absentes{$don_abs}) ) {
+				if ( &arrete2013($datecloture) ) {
+					if ( (length ($valeurs[$i]) == 0) || $valeurs[$i] =~ m/^ {1,}$/) {
+						&erreur( "V",
+							"Au moins un enregistrement dans le FEC ne contient pas de valeur pour le champ "
+						. $champs_log
+						. " :   :   : ligne  $nb_l : \n" );
+					}
+				}
+		}
+# Fin ajout SPECs 22 11/01/2015
                 if ( $champs[$i] =~ m/num_cpte_gen/i ) {
                     if ( $valeurs[$i] !~ m/^[0-9]{3}.*$/ ) {
                         &erreur( "A",
@@ -720,6 +752,7 @@ sub controle() {
 
                     }
                 }
+
                 elsif ( lc( $r_mapping{ uc($champs[$i]) }{'type'} ) eq "numeric" ) {
 
                     if ( $valeurs[$i] eq "" ) {
@@ -909,6 +942,7 @@ sub controle() {
     }    # fin parcours fichier wend
 
     close(F);
+
     local $/ = "\n";
 
     $somme{'DCC'} = int( $somme{'DCC'} * 100 + 0.500001 ) / 100;
@@ -931,20 +965,29 @@ sub controle() {
 #    }
     $vers_java = &verif_version_java;
     $vers_java =~ s/version //;
-
     # --> fin controle
     &erreur( "I", "Fin de Contrôle" );
     &maj_log($dbhlog);    # mise en persistance table hash
 
-    if ( uc($ctl) eq "CTL" or &aorte() eq "t" ) {
-        &faire_pdf();
-        exit 0;
+# Ajout de cette fonction suite à la SPEC 23 le 16/02/2015
+    if ( ( $nb_errs > 0 ) && ( uc($ctl) eq "CTL" ) && ( &aorte() ne "t" ) ) {
+	&faire_pdf();
+	# pour laisser le temps au pdf de s'afficher...
+	sleep 5;
+	&Fenetre_KO();
+    } else {
+# Fin ade cette fonction suite à la SPEC 23 le 16/02/2015
+	if ( uc($ctl) eq "CTL" or &aorte() eq "t" ) {
+		&faire_pdf();
+		exit 0;
+	}
+
+	if ( ( $nb_errs > 0 ) && ( uc($ctl) ne "CTL" ) ) {
+		&faire_pdf();
+		&finko("paschargé");
+	}
     }
 
-    if ( ( $nb_errs > 0 ) && ( uc($ctl) ne "CTL" ) ) {
-        &faire_pdf();
-        &finko("paschargé");
-    }
     
 }
 
@@ -1041,6 +1084,7 @@ sub faire_pdf() {
     our $font_size = 13;
     our $align     = "center";
     my @result;
+    my @rech_donnees_absentes;
     chomp $vers_java;
     my $rResult = \@result;
 
@@ -1069,53 +1113,129 @@ sub faire_pdf() {
 "SELECT count(*) from log_alim  where id_trait = '$log_seq' and type_log in ('E','O') ";
     @result = &sql_1col($REQ);
 
+# Ajout SPECs 22 11/01/2015
+    $REQ =
+"SELECT count(*) from log_alim  where id_trait = '$log_seq' and type_log in ('V') ";
+    @rech_donnees_absentes = &sql_1col($REQ);
+
     # Champs oblig manquant
     
-    if ( $result[0] == 0 ) {
-        if ($pas_complet == 1 && ( substr($datecloture,0,4) >= 2013 ) )  {
-            $text_to_place =
-"La structure du fichier des écritures comptables ne peut être considérée comme conforme aux dispositions de l'article A.47 A-1 du livre des procédures fiscales car des champs obligatoires n'ont pas été détectés, cf. dernière colonne du tableau de synthèse en page 2.";
-        }
-        else {
-# &ombre("Les champs obligatoires prévus par l'arrêté sont présents ",190,50);
-           $text_to_place =
-"La structure du fichier des écritures comptables remis apparaît conforme aux dispositions de l’article A.47 A-1 du Livre des Procédures Fiscales.";
-        }
-        &ajoute_paragraphe( $text_to_place, 180, 75 );
-    }
-    else {
-        if ($pas_complet == 1 && ( substr($datecloture,0,4) >= 2013 ) )  {
-            $text_to_place =
-"La structure du fichier des écritures comptables ne peut être considérée comme conforme aux dispositions de l'article A.47 A-1 du livre des procédures fiscales car des champs obligatoires n'ont pas été détectés, cf. dernière colonne du tableau de synthèse en page 2.
+    if ( not &arrete2013($datecloture) ) {
+		if ( $result[0] == 0 ) {
+			# &ombre("Les champs obligatoires prévus par l'arrêté sont présents ",190,50);
+			$text_to_place =
+			"La structure du fichier des écritures comptables remis apparaît conforme aux dispositions de l’article A.47 A-1 du Livre des Procédures Fiscales.";
+			&ajoute_paragraphe( $text_to_place, 180, 75 );
+			undef @result;
+		    } else {
+			$text_to_place =
+			" La structure du fichier des écritures comptables remis ne peut être considérée comme conforme aux dispositions de l’article A.47 A-1 du Livre des Procédures Fiscales pour les raisons ci-dessous :";
 
-Par ailleurs, le fichier des écritures comptables n'est pas conforme en raison des anomalies listées ci-dessous : ";
-        }
-        else {
-            $text_to_place =
-" La structure du fichier des écritures comptables remis ne peut être considérée comme conforme aux dispositions de l’article A.47 A-1 du Livre des Procédures Fiscales pour les raisons ci-dessous :";
-        }
-        &ajoute_paragraphe( $text_to_place, 180, 75 );
-        undef @result;
+			&ajoute_paragraphe( $text_to_place, 180, 75 );
+			undef @result;
+			#push @result,"";
+			$REQ =
+			"SELECT  replace(replace (t.fixe_log,'#1',l.val1),'#2',l.val2) from log_alim l,log_type t where id_trait = '$log_seq' and type_log ='O' and t.id_type=l.texte_log";
+			push @result, &sql_1col($REQ);
+			$REQ =
+			"select distinct(replace(replace (t.fixe_log,'#1','...'),'#2','...')) || '\n [' || count (*)  || '] fois dans le fichier' from log_alim l, log_type t where id_trait = '$log_seq' and type_log='E' and t.id_type=l.texte_log group by l.texte_log having count (distinct l.id_ligne) >1";
 
-        #push @result,"";
-        $REQ =
-"SELECT  replace(replace (t.fixe_log,'#1',l.val1),'#2',l.val2) from log_alim l,log_type t where id_trait = '$log_seq' and type_log ='O' and t.id_type=l.texte_log";
-        push @result, &sql_1col($REQ);
-        $REQ =
-"select distinct(replace(replace (t.fixe_log,'#1','...'),'#2','...')) || '\n [' || count (*)  || '] fois dans le fichier' from log_alim l, log_type t where id_trait = '$log_seq' and type_log='E' and t.id_type=l.texte_log group by l.texte_log having count (distinct l.id_ligne) >1";
+			push @result, &sql_1col($REQ);
+			$REQ =
+			"select distinct(replace(replace (t.fixe_log,'#1',l.val1),'#2',l.val2)) from log_alim l, log_type t where id_trait = '$log_seq' and type_log='E' and t.id_type=l.texte_log group by l.texte_log having count (distinct l.id_ligne)=1";
+			push @result, &sql_1col($REQ);
 
-        push @result, &sql_1col($REQ);
-        $REQ =
-"select distinct(replace(replace (t.fixe_log,'#1',l.val1),'#2',l.val2)) from log_alim l, log_type t where id_trait = '$log_seq' and type_log='E' and t.id_type=l.texte_log group by l.texte_log having count (distinct l.id_ligne)=1";
-        push @result, &sql_1col($REQ);
+			&ajoute_liste( \@result, 180, 0 );
 
-        &ajoute_liste( \@result, 180, 0 );
+			&ajoute_paragraphe(
+			"Vérifiez que le nom des champs est correctement libellé, que le nombre de séparateurs de champs est correct sur l’ensemble du fichier.",
+			    180, 50
+			);
+		}
+	    } else {
+		if ( $result[0] == 0 ) {    
+		    if ( $rech_donnees_absentes[0] == 0 ) {
+# Toutes les données
+			    if ($pas_complet == 1 )  {
+    # Pas complet (cas 5)
+					    $text_to_place =
+					    "La structure du fichier des écritures comptables ne peut être considérée comme conforme aux dispositions de l'article A.47 A-1 du livre des procédures fiscales car des champs obligatoires n'ont pas été détectés, cf. dernière colonne du tableau de synthèse en page 2.";
+				    } else {
+    # Complet (cas 1)
+					    # &ombre("Les champs obligatoires prévus par l'arrêté sont présents ",190,50);
+					    $text_to_place =
+					    "La structure du fichier des écritures comptables remis apparaît conforme aux dispositions de l’article A.47 A-1 du Livre des Procédures Fiscales.";
+			    }
+			} else {
+# Données Absentes
+			    if ($pas_complet == 1 )  {
+    # Pas complet (cas 7)
+					    $text_to_place =
+					    "La structure du fichier des écritures comptables ne peut être considérée comme conforme aux dispositions de l’article A.47 A-1 du livre des procédures fiscales car des champs obligatoires n'ont pas été détectés, cf. dernière colonne du tableau de synthèse en page 2 et des données obligatoires sont manquantes, cf. rubrique « Données absentes » en page 3.";
+				    } else {
+    # Complet (cas 3) 
+					    # &ombre("Les champs obligatoires prévus par l'arrêté sont présents ",190,50);
+					    $text_to_place =
+					    "La structure du fichier des écritures comptables ne peut être considérée comme conforme aux dispositions de l’article A.47 A-1 du livre des procédures fiscales car des données obligatoires sont manquantes, cf. rubrique « Données absentes » en page 3.";
+			    }
+		    }	
+		    &ajoute_paragraphe( $text_to_place, 180, 75 );
+		} else {
+	    # Anomalies
+		    if ( $rech_donnees_absentes[0] == 0 ) {
+	    # Toutes les données	
+				    if ($pas_complet == 1 )  {
+	    # Pas complet (cas 6)
+						    $text_to_place =
+						    "La structure du fichier des écritures comptables ne peut être considérée comme conforme aux dispositions de l'article A.47 A-1 du livre des procédures fiscales car des champs obligatoires n'ont pas été détectés, cf. dernière colonne du tableau de synthèse en page 2.
 
-        &ajoute_paragraphe(
-"Vérifiez que le nom des champs est correctement libellé, que le nombre de séparateurs de champs est correct sur l’ensemble du fichier.",
-            180, 50
-        );
+				    Par ailleurs, le fichier des écritures comptables n'est pas conforme en raison des anomalies listées ci-dessous : ";
+					    } else {
+	    # Complet (cas 2)
+						    $text_to_place =
+						    " La structure du fichier des écritures comptables remis ne peut être considérée comme conforme aux dispositions de l’article A.47 A-1 du Livre des Procédures Fiscales pour les raisons ci-dessous :";
+				    }
+			    } else {
+	    # Données Absentes
+				    if ($pas_complet == 1 )  {
+	    # Pas complet (cas 8)
+						    $text_to_place =
+						    "La structure du fichier des écritures comptables ne peut être considérée comme conforme aux dispositions de l’article A.47 A-1 du livre des procédures fiscales car des champs obligatoires n'ont pas été détectés, cf. dernière colonne du tableau de synthèse en page 2 et des données obligatoires sont manquantes, cf. rubrique « Données absentes » en page 3.
 
+				    Par ailleurs, le fichier des écritures comptables n'est pas conforme en raison des anomalies listées ci-dessous : ";
+					    } else {
+	    # Complet (cas 4)
+						    $text_to_place =
+						    " La structure du fichier des écritures comptables ne peut être considérée comme conforme aux dispositions de l’article A.47 A-1 du livre des procédures fiscales car des données obligatoires sont manquantes, cf. rubrique « Données absentes » en page 3.
+						    
+				    Par ailleurs, le fichier des écritures comptables n'est pas conforme en raison des anomalies listées ci-dessous : ";
+				    }
+
+		    }
+		&ajoute_paragraphe( $text_to_place, 180, 75 );
+		if ( $result[0] != 0 ) {
+		    undef @result;
+
+		    #push @result,"";
+		    $REQ =
+		    "SELECT  replace(replace (t.fixe_log,'#1',l.val1),'#2',l.val2) from log_alim l,log_type t where id_trait = '$log_seq' and type_log ='O' and t.id_type=l.texte_log";
+		    push @result, &sql_1col($REQ);
+		    $REQ =
+		    "select distinct(replace(replace (t.fixe_log,'#1','...'),'#2','...')) || '\n [' || count (*)  || '] fois dans le fichier' from log_alim l, log_type t where id_trait = '$log_seq' and type_log='E' and t.id_type=l.texte_log group by l.texte_log having count (distinct l.id_ligne) >1";
+
+		    push @result, &sql_1col($REQ);
+		    $REQ =
+		    "select distinct(replace(replace (t.fixe_log,'#1',l.val1),'#2',l.val2)) from log_alim l, log_type t where id_trait = '$log_seq' and type_log='E' and t.id_type=l.texte_log group by l.texte_log having count (distinct l.id_ligne)=1";
+		    push @result, &sql_1col($REQ);
+
+		    &ajoute_liste( \@result, 180, 0 );
+
+		    &ajoute_paragraphe(
+		    "Vérifiez que le nom des champs est correctement libellé, que le nombre de séparateurs de champs est correct sur l’ensemble du fichier.",
+				180, 50
+			    );
+		}
+	}
     }
     
     &ajoute_paragraphe("La conformité structurelle du FEC ne présage pas de la régularité de la comptabilité, \nni de sa valeur probante.",
@@ -1199,7 +1319,6 @@ Par ailleurs, le fichier des écritures comptables n'est pas conforme en raison 
         );
         $REQ =
 "select distinct(replace(replace (t.fixe_log,'#1','...'),'#2','...')) || '\n [' || count (*)  || '] fois dans le fichier' from log_alim l, log_type t where id_trait = '$log_seq' and type_log='A' and t.id_type=l.texte_log group by l.texte_log having count ( distinct l.id_ligne) >1";
-
         push @result, &sql_1col($REQ);
         $REQ =
 "select distinct(replace(replace (t.fixe_log,'#1',l.val1),'#2',l.val2)) from log_alim l, log_type t where id_trait = '$log_seq' and type_log='A' and t.id_type=l.texte_log group by l.texte_log having count (distinct l.id_ligne)=1";
@@ -1208,13 +1327,25 @@ Par ailleurs, le fichier des écritures comptables n'est pas conforme en raison 
         &ajoute_liste( \@result, 180, 0 );
     }
     if ( &aorte() ne "t" ) {
-    $text_to_place =
-      " le total des montants figurant au débit et au crédit est :";
-    &ajoute_paragraphe( $text_to_place, 190, 50 );
-    my $some_data =
-      [ [ "Cumul Debit", "Cumul Credit", ], [ $somme{'DCC'}, $somme{'CCC'} ] ];
-    &ajoute_table( $some_data, 120, 2 );
+	$text_to_place =
+	" le total des montants figurant au débit et au crédit est :";
+	&ajoute_paragraphe( $text_to_place, 190, 50 );
+	my $some_data =
+	[ [ "Cumul Debit", "Cumul Credit", ], [ $somme{'DCC'}, $somme{'CCC'} ] ];
+	&ajoute_table( $some_data, 120, 2 );
     }
+    
+# Ajout SPECs 22 11/01/2015
+    undef @result;
+    if ( $rech_donnees_absentes[0] != 0 ) {
+	&ombre( "Données absentes :", 190, 50 );
+	$REQ =
+"select distinct(replace(replace (t.fixe_log,'#1',''),'#2','')) from log_alim l, log_type t where id_trait = '$log_seq' and type_log='V' and t.id_type=l.texte_log group by l.texte_log having count ( distinct l.id_ligne) >0";
+        push @result, &sql_1col($REQ);
+        &ajoute_liste( \@result, 180, 0 );
+    }
+# Fin ajout SPECs 22 11/01/2015
+
     my ( $sec, $min, $hour, $mday, $mon, $year ) = localtime(time);
     my $nouv_pdf =
       '../rapports/rapport_' . basename($file) . "_$hour$min$sec" . '.pdf';
@@ -1228,12 +1359,15 @@ Par ailleurs, le fichier des écritures comptables n'est pas conforme en raison 
     }
     else {
         system("start $nouv_pdf");
-
     }
 
-    if ( $nb_errs > 0 ) {
-        &finko("paschargé");
-    }
+# Ajour de cette fonction suite à la SPEC 23 le 16/02/2015
+	if ( $nb_errs > 0 ) {
+#	&finko("paschargé");
+		if ( ! ( (uc($ctl) eq "CTL" ) && ( &aorte() ne "t" ) ) ) {
+			&finko("paschargé");
+		}
+	}
 
 }
 
@@ -1242,6 +1376,29 @@ sub Tk::Error {
     my ( $Widget, $Error, @Locations ) = @_;
     &erreur( "E", "Erreur system : contacter l' AT : " . $Error );
     &finko;
+}
+
+# Ajour de cette fonction suite à la SPEC 23 le 16/02/2015
+sub Fenetre_KO() {
+
+	my $Ko_fenetre_principale = $fentop->Toplevel( -title => 'Chargement impossible' );
+	my $KO_frame1 = $Ko_fenetre_principale->Frame;
+	my $KO_zoneT = $KO_frame1->Label(-text=>"  \n ");
+	$KO_zoneT->pack();
+	my $KO_zoneVersion = $KO_frame1->Label(-text=>&utf8toutf8("\nLe FEC ne peut être intégré dans ALTO2.\n  Un nouveau fichier est nécessaire.\n"), -font => '{Garamond} 15');
+	$KO_zoneVersion->pack();
+	$KO_frame1->pack();
+	my $KO_frame2 = $Ko_fenetre_principale->Frame;
+	my $KO_Button1 = $KO_frame2->Button(
+			-text => 'Ok',
+			-font => '{Garamond} 10',
+			-command => sub { &finko("paschargé"); }
+			);
+	$KO_Button1->pack(-pady => '40', -padx => '200', -side => 'left'
+			);
+	$KO_frame2->pack();
+	$Ko_fenetre_principale->focusForce;
+
 }
 
 # dernière ligne !!!!

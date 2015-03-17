@@ -3,7 +3,7 @@
 
 
 
- t.num_cpte_gen||COALESCE( '-'||t.num_cpt_aux,'') AS "Numéro Compte Gén-Aux",
+
 
 
 

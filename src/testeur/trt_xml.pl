@@ -283,7 +283,9 @@ sub constructionPlat {
     my @txt;           # tableau des champs du fichier txt
     my $v;             # ligne
                        # if ( !defined( $entete[3] ) ) {        return;     }
-
+    # 20141009 : forcer le nb éléments du fichier à produire au max des colonnes (cf alimenTables() )
+    $txt[19]='';
+    
     &trace("contenu tableau xml :");
     for ( $indice_xml = 1; $indice_xml <= $#plat; $indice_xml++ ) {
         &trace(   $indice_xml
@@ -306,8 +308,6 @@ sub constructionPlat {
                 . "donnee code : "
                 . $plat_code[$indice_xml] );
         $txt[$indice_txt] = $plat[$indice_xml];
-
-        # &trace ("txt [".$indice_txt."] =". $txt[$indice_txt]);
     }
 
   #RG:F: retraitement debit / credit par ligne en présence de Montant/sens :I
@@ -328,6 +328,12 @@ sub constructionPlat {
                     . uc( $plat[21] ) );
             exit 1;
         }
+    # correction bug 20141009 : après utilisation des champs 20 21 du xml
+    # il faut les purger pour réduire la liste @plat à 19
+    
+    unshift @plat;
+    unshift @plat;
+    
     }
 
     shift @txt;
@@ -347,12 +353,7 @@ sub constructionPlat {
     my $rep = join( "|", @txt );
 
     &trace($rep);
-    if ( $#plat < 20 ) {
-        for ( my $ijk = $#txt; $ijk <= $#plat; $ijk++ ) {
-            $rep .= '|';
-        }
-        &trace( "ligne complete : " . $rep );
-    }
+        
     $rep = &conv_to_iso($rep);
 
     print $rep. "\n";
@@ -400,34 +401,6 @@ sub balise_debut {
     $tag = 1;
 }
 
-sub cherche_champs {
-
-    my ( $dataloc, $pfxloc, $pfxdec ) = @_;
-    &trace( $dataloc, $pfxloc, $pfxdec );
-    foreach my $ii ( keys %Hf1_fmt ) {
-        if (   index( $rHf1_fmt->{$ii}{'chemin'}, $pfxloc ) != -1
-            && $rHf1_fmt->{$ii}{'noeud'} eq $dataloc
-            && index( $rHf1_fmt->{$ii}{'chemin'}, $pfxdec ) != -1 )
-        {
-            &trace( $ii . "trouve" );
-            return $ii;
-        }
-    }
-    return 0;
-}
-
-sub cherche_rang {
-    my ($dataloc) = @_;
-    foreach my $ii ( keys %Hf1_fmt ) {
-        if ( index( $rHf1_fmt->{$ii}{'chemin'}, $dataloc ) != -1 ) {
-            &trace( $ii . "trouve" );
-            return $ii;
-        }
-    }
-    &trace("$dataloc non trouve");
-    return 50;
-
-}
 
 sub balise_texte {
     ( $p, $data ) = @_;
@@ -460,7 +433,8 @@ sub balise_texte {
         return;
     }
     $data = &reglesMetier( $ii, $data );
-    if ( $data !~ /^\s*$/ ) {
+    #20141009 perte d'un champs si derniere position et contenu vide
+    # if ( $data !~ /^\s*$/ ) {
         if ( ( $elem ne $svelem ) || ( $elem eq $svelem && $finsstruc == 1 ) )
         {
             $i++;
@@ -470,6 +444,8 @@ sub balise_texte {
                 @plat      = '';
                 @plat_code = '';
                 $new_row   = 0;
+                # force la liste des champs en sortie au nombre de champs cibles
+                $plat[19]='';
             }
             $plat[$ii]      = $data;
             $plat_code[$ii] = $Hattr{'code'};
@@ -487,7 +463,7 @@ sub balise_texte {
         }
         $tag       = 0;
         $finsstruc = 0;
-    }
+    # }
     &trace(
         "ii :" . $ii . " plat :" . $plat[$ii] . "code : " . $plat_code[$ii] );
 }
@@ -549,7 +525,6 @@ sub reglesMetier {
         if ( $valeurEntree !~ m/^[0-9]{3}[0-9a-zA-Z]*$/ ) {
             &trace( "Num Compte incorrect $valeurEntree \n", "X" );
         }
-
     }
 
     return $valeurSortie;
