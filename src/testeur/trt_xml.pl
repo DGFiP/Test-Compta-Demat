@@ -119,6 +119,25 @@ my $est_utf8 = 0;
 my $FIFO = undef;
 &test_compress;
 
+# Ajout MC le 20/03/2017 On tente de déterminer le type de compta (fichier xsd)
+#                        pour forcer le nombre de colonnes obligatoires en fonction de ce type de compta.
+my $read_buffer = "";
+open( FT, "+< :raw", $ifile ) or die "impossible";
+
+my $read_nb = 0;
+$read_nb = sysread FT, $read_buffer, 300;
+close FT;
+my $xsdfile = "";
+if ( $read_buffer =~ m/noNamespaceSchemaLocation(.*)=(.*)"(.*).xsd"(.*)/i ) {
+	$xsdfile = $3;
+	$xsdfile =~ s/file://;
+}
+my $pos_montant = 19;
+my $pos_sens = 20;
+
+
+
+
 my $handle   = *FICXML;             # handle du fichier XML
 my $encodage = ChercheEncodage();
 
@@ -217,46 +236,124 @@ sub alimTables {
 # tables au format    cf doc opencalc pour générer les lignes en cas de maj
 # pères_clés_xml:fils;rang_plat;rang_xml;règle_métier_à_appliquer;CHAMPS_BASE_POSTGRES
 #  champs 4 et 19 <=>>
-    my @f1_fmt;
-    @f1_fmt = qw(
-        journal§JournalCode;1;1;;code_jrnal
-        journal§JournalLib;2;2;;lib_jrnal
-        journal_ecriture§EcritureNum;3;3;;num_ecr
-        journal_ecriture§EcritureDate;4;4;DS;date_cpt
-        journal_ecriture_ligne§CompteNum;5;5;NC;num_cpte_gen
-        journal_ecriture_ligne§CompteLib;6;6;;lib_cpte_gen
-        journal_ecriture_ligne§CompteAuxNum;7;7;;num_cpt_aux
-        journal_ecriture_ligne§CompteAuxLib;8;8;;lib_cpt_aux
-        journal_ecriture_ligne§Debit;9;9;NU;mtn_debit
-        journal_ecriture_ligne§Credit;10;10;NU;mtn_credit
-        journal_ecriture§EcritureLib;11;11;;lib_ecriture
-        journal_ecriture§PieceRef;12;12;;num_piece
-        journal_ecriture§PieceDate;13;13;DS;date_piece
-        journal_ecriture§EcritureLet;14;14;;code_lettrage
-        journal_ecriture§DateLet;15;15;DS;date_lettrage
-        journal_ecriture§Resultat;16;16;;ecr_type
-        journal_ecriture§ValidDate;17;17;DS;valid_date
-        journal_ecriture_ligne§Montantdevise;18;18;NU;mtn_devise
-        journal_ecriture_ligne§Idevise;19;19;;idevise
-        journal_ecriture_ligne§Montant;0;20;NU;mtn_debit
-        journal_ecriture_ligne§Sens;0;21;;mtn_credit
-    );
+	my @f1_fmt;
+    
+	if ( $xsdfile eq "" || $xsdfile =~ /VII-1/i || $xsdfile =~ /VIII-3/i ) {
+		@f1_fmt = qw(
+			journal§JournalCode;1;1;;code_jrnal
+			journal§JournalLib;2;2;;lib_jrnal
+			journal_ecriture§EcritureNum;3;3;;num_ecr
+			journal_ecriture§EcritureDate;4;4;DS;date_cpt
+			journal_ecriture_ligne§CompteNum;5;5;NC;num_cpte_gen
+			journal_ecriture_ligne§CompteLib;6;6;;lib_cpte_gen
+			journal_ecriture_ligne§CompteAuxNum;7;7;;num_cpt_aux
+			journal_ecriture_ligne§CompteAuxLib;8;8;;lib_cpt_aux
+			journal_ecriture_ligne§Debit;9;9;NU;mtn_debit
+			journal_ecriture_ligne§Credit;10;10;NU;mtn_credit
+			journal_ecriture§EcritureLib;11;11;;lib_ecriture
+			journal_ecriture§PieceRef;12;12;;num_piece
+			journal_ecriture§PieceDate;13;13;DS;date_piece
+			journal_ecriture§EcritureLet;14;14;;code_lettrage
+			journal_ecriture§DateLet;15;15;DS;date_lettrage
+			journal_ecriture§ValidDate;16;16;DS;valid_date
+			journal_ecriture_ligne§Montantdevise;17;17;NU;mtn_devise
+			journal_ecriture_ligne§Idevise;18;18;;idevise
+			journal_ecriture_ligne§Montant;0;19;NU;mtn_debit
+			journal_ecriture_ligne§Sens;0;20;;mtn_credit
+		);
+		$pos_montant = 19;
+		$pos_sens = 20;
+	} else {
+		if ( $xsdfile eq "" or $xsdfile =~ /VIII-5/i ) {
+			@f1_fmt = qw(
+				journal§JournalCode;1;1;;code_jrnal
+				journal§JournalLib;2;2;;lib_jrnal
+				journal_ecriture§EcritureNum;3;3;;num_ecr
+				journal_ecriture§EcritureDate;4;4;DS;date_cpt
+				journal_ecriture_ligne§CompteNum;5;5;NC;num_cpte_gen
+				journal_ecriture_ligne§CompteLib;6;6;;lib_cpte_gen
+				journal_ecriture_ligne§CompteAuxNum;7;7;;num_cpt_aux
+				journal_ecriture_ligne§CompteAuxLib;8;8;;lib_cpt_aux
+				journal_ecriture_ligne§Debit;9;9;NU;mtn_debit
+				journal_ecriture_ligne§Credit;10;10;NU;mtn_credit
+				journal_ecriture§EcritureLib;11;11;;lib_ecriture
+				journal_ecriture§PieceRef;12;12;;num_piece
+				journal_ecriture§PieceDate;13;13;DS;date_piece
+				journal_ecriture§EcritureLet;14;14;;code_lettrage
+				journal_ecriture§DateLet;15;15;DS;date_lettrage
+				journal_ecriture§ValidDate;16;16;DS;valid_date
+				journal_ecriture_ligne§Montantdevise;17;17;NU;mtn_devise
+				journal_ecriture_ligne§Idevise;18;18;;idevise
+				journal_ecriture§DateRglt;19;19;DS;paiement_date
+				journal_ecriture§ModeRglt;20;20;DS;paiement_mode
+				journal_ecriture§NatOp;21;21;;prestation
+				journal_ecriture_ligne§Montant;0;22;NU;mtn_debit
+				journal_ecriture_ligne§Sens;0;23;;mtn_credit
+			);
+			$pos_montant = 22;
+			$pos_sens = 23;
+		} else {
+			if ( $xsdfile eq "" or $xsdfile =~ /VIII-7/i ) {
+				@f1_fmt = qw(
+					journal§JournalCode;1;1;;code_jrnal
+					journal§JournalLib;2;2;;lib_jrnal
+					journal_ecriture§EcritureNum;3;3;;num_ecr
+					journal_ecriture§EcritureDate;4;4;DS;date_cpt
+					journal_ecriture_ligne§CompteNum;5;5;NC;num_cpte_gen
+					journal_ecriture_ligne§CompteLib;6;6;;lib_cpte_gen
+					journal_ecriture_ligne§CompteAuxNum;7;7;;num_cpt_aux
+					journal_ecriture_ligne§CompteAuxLib;8;8;;lib_cpt_aux
+					journal_ecriture_ligne§Debit;9;9;NU;mtn_debit
+					journal_ecriture_ligne§Credit;10;10;NU;mtn_credit
+					journal_ecriture§EcritureLib;11;11;;lib_ecriture
+					journal_ecriture§PieceRef;12;12;;num_piece
+					journal_ecriture§PieceDate;13;13;DS;date_piece
+					journal_ecriture§EcritureLet;14;14;;code_lettrage
+					journal_ecriture§DateLet;15;15;DS;date_lettrage
+					journal_ecriture§ValidDate;16;16;DS;valid_date
+					journal_ecriture_ligne§Montantdevise;17;17;NU;mtn_devise
+					journal_ecriture_ligne§Idevise;18;18;;idevise
+					journal_ecriture§DateRglt;19;19;DS;paiement_date
+					journal_ecriture§ModeRglt;20;20;DS;paiement_mode
+					journal_ecriture§NatOp;21;21;;prestation
+					journal_ecriture§IdClient;22;22;;client
+					journal_ecriture§Resultat;23;23;;ecr_type
+					journal_ecriture_ligne§Montant;0;24;NU;mtn_debit
+					journal_ecriture_ligne§Sens;0;25;;mtn_credit
+				);
+				$pos_montant = 24;
+				$pos_sens = 25;
+			}
+		}
+	}
+	
+# Ajout MC le 27/05/2015 DATERGLT, NATOP et IDCLIENT car sont détectés comme champs supplémentaires.
+#        journal_ecriture_ligne§Idevise;19;19;;idevise
+#        journal_ecriture_ligne§Montant;0;20;NU;mtn_debit
+#        journal_ecriture_ligne§Sens;0;21;;mtn_credit
 
-    foreach my $i (@f1_fmt) {
-        my @liste1 = split /;/, uc($i);
-        my ( $i_1, $i_2 ) = split /§/, $liste1[0];
-        $Hf1_fmt{ $liste1[2] }{'chemin'} = $i_1;
-        $Hf1_fmt{ $liste1[2] }{'noeud'}  = $i_2;
-        $Hf1_fmt{ $liste1[2] }{'plat'}   = $liste1[1];
+#         journal_ecriture§DateRglt;20;20;DS;paiement_date
+#         journal_ecriture§NatOp;21;21;;prestation
+#         journal_ecriture§IdClient;22;22;;client
+#         journal_ecriture_ligne§Montant;0;23;NU;mtn_debit
+#         journal_ecriture_ligne§Sens;0;24;;mtn_credit
+        
 
-        if ( !defined( $liste1[3] ) ) {
-            $Hf1_fmt{ $liste1[2] }{'metier'} = " ";
-        }
-        else {
-            $Hf1_fmt{ $liste1[2] }{'metier'} = $liste1[3];
-        }
-        $Hf1_fmt{ $liste1[2] }{'noeud_plat'} = $liste1[4];
-    }
+	foreach my $i (@f1_fmt) {
+		my @liste1 = split /;/, uc($i);
+		my ( $i_1, $i_2 ) = split /§/, $liste1[0];
+		$Hf1_fmt{ $liste1[2] }{'chemin'} = $i_1;
+		$Hf1_fmt{ $liste1[2] }{'noeud'}  = $i_2;
+		$Hf1_fmt{ $liste1[2] }{'plat'}   = $liste1[1];
+
+		if ( !defined( $liste1[3] ) ) {
+			$Hf1_fmt{ $liste1[2] }{'metier'} = " ";
+		}
+		else {
+			$Hf1_fmt{ $liste1[2] }{'metier'} = $liste1[3];
+		}
+		$Hf1_fmt{ $liste1[2] }{'noeud_plat'} = $liste1[4];
+	}
 
 }
 
@@ -284,7 +381,11 @@ sub constructionPlat {
     my $v;             # ligne
                        # if ( !defined( $entete[3] ) ) {        return;     }
     # 20141009 : forcer le nb éléments du fichier à produire au max des colonnes (cf alimenTables() )
-    $txt[19]='';
+    # 14/11/2016 Modif MC force le nombre de champs à 23 au lieu de 22 
+    #$txt[22]='';
+    #$txt[23]='';
+    # 14/11/2016 Fin Modif MC force le nombre de champs à 23 au lieu de 22 
+    $txt[18]='';
     
     &trace("contenu tableau xml :");
     for ( $indice_xml = 1; $indice_xml <= $#plat; $indice_xml++ ) {
@@ -312,22 +413,40 @@ sub constructionPlat {
 
   #RG:F: retraitement debit / credit par ligne en présence de Montant/sens :I
   #RG:F: retraitement debit / credit par ligne, sens hors plage D C +1 -1 :E
-    if ( defined $plat[21] && defined $plat[20] ) {
-        &trace( "Montant : " . $plat[20] . " SENS :" . $plat[21] );
-        if ( uc( $plat[21] ) eq "C" || $plat[21] =~ /^\s*\-1\s*$/ ) {
-            $txt[10] = $plat[20];
+    if ( defined $plat[$pos_sens] && defined $plat[$pos_montant] ) {
+        &trace( "Montant : " . $plat[$pos_montant] . " SENS :" . $plat[$pos_sens] );
+        if ( uc( $plat[$pos_sens] ) eq "C" || $plat[$pos_sens] =~ /^\s*\-1\s*$/ ) {
+            $txt[10] = $plat[$pos_montant];
             $txt[9]  = 0;
 
         }
-        elsif ( uc( $plat[21] ) eq "D" || $plat[21] =~ /^\s*\+1\s*$/ ) {
-            $txt[9]  = $plat[20];
+        elsif ( uc( $plat[$pos_sens] ) eq "D" || $plat[$pos_sens] =~ /^\s*\+1\s*$/ ) {
+            $txt[9]  = $plat[$pos_montant];
             $txt[10] = 0;
         }
         else {
             &trace( "Ligne :  $ch_plus_ligne, Valeur SENS incorrecte : "
-                    . uc( $plat[21] ) );
+                    . uc( $plat[$pos_sens] ) );
             exit 1;
         }
+
+        
+#     if ( defined $plat[21] && defined $plat[20] ) {
+#         &trace( "Montant : " . $plat[20] . " SENS :" . $plat[21] );
+#         if ( uc( $plat[21] ) eq "C" || $plat[21] =~ /^\s*\-1\s*$/ ) {
+#             $txt[10] = $plat[20];
+#             $txt[9]  = 0;
+# 
+#         }
+#         elsif ( uc( $plat[21] ) eq "D" || $plat[21] =~ /^\s*\+1\s*$/ ) {
+#             $txt[9]  = $plat[20];
+#             $txt[10] = 0;
+#         }
+#         else {
+#             &trace( "Ligne :  $ch_plus_ligne, Valeur SENS incorrecte : "
+#                     . uc( $plat[21] ) );
+#             exit 1;
+#         }
     # correction bug 20141009 : après utilisation des champs 20 21 du xml
     # il faut les purger pour réduire la liste @plat à 19
     
@@ -445,7 +564,7 @@ sub balise_texte {
                 @plat_code = '';
                 $new_row   = 0;
                 # force la liste des champs en sortie au nombre de champs cibles
-                $plat[19]='';
+                $plat[18]='';
             }
             $plat[$ii]      = $data;
             $plat_code[$ii] = $Hattr{'code'};

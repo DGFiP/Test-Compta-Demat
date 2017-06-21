@@ -62,6 +62,7 @@ sub sub_entete() {
     my @champs_entete;
     my $separateur;
     my $trouve;
+    my $errdc = 0;
     # rustine mac fin chariot
     open( my $hf, "$file");
     
@@ -70,7 +71,9 @@ sub sub_entete() {
     close $hf;
     
     open( F, "$file" )
-        or ( &erreur( "E", "Impossible de trouver $file" ) && return 1 );
+        or ( $errmsg = "Impossible de trouver $file" && return 1 );
+#        or ( &erreur( "E", "Impossible de trouver $file" ) && return 1 );
+
     local $/ = $crlf;
     binmode F, ":raw" ;
 
@@ -112,7 +115,8 @@ sub sub_entete() {
 
  #RG:T: mapping des entetes fournies dans le fichier avec le format arrêté:I
     open( STRUC, "< fmt_arrete" )
-        or ( &erreur( "E", "Impossible de trouver fmt_arrete" ) && return 1 );
+        or ( $errmsg = "Impossible de trouver fmt_arrete" && return 1 );
+#        or ( &erreur( "E", "Impossible de trouver fmt_arrete" ) && return 1 );
     local $/ = "\n";
 
     my $entete;
@@ -153,9 +157,11 @@ sub sub_entete() {
     }
 
     open( F, "> $ofile" )
-        or ( &erreur( "E", "Impossible d'ouvrir $ofile en ecriture" )
+        or ( $errmsg = "Impossible d'ouvrir $ofile en ecriture" 
         && return 1 );
-
+#         or ( &erreur( "E", "Impossible d'ouvrir $ofile en ecriture" )
+#         && return 1 );
+        
     my $separateur_esc = $separateur;
     $separateur_esc =~ s/\\\|/|/;
     $separateur_esc =~ s/\\t/\t/;
@@ -172,13 +178,17 @@ sub sub_entete() {
     
     
         open( I, $opts{f} . '_ori2' )
-            or ( &erreur( "E", "Impossible de trouver {$file}_ori2 " )
+            or ( $errmsg = "Impossible de trouver {$file}_ori2 " 
             && return 1 );
+#             or ( &erreur( "E", "Impossible de trouver {$file}_ori2 " )
+#             && return 1 );
         local $/ = $crlf;
         binmode I, ":raw" ;
         open( O, "> $file" )
-            or ( &erreur( "E", "Impossible d'ouvrir $file en ecriture" )
+            or ( $errmsg = "Impossible d'ouvrir $file en ecriture" 
             && return 1 );
+#             or ( &erreur( "E", "Impossible d'ouvrir $file en ecriture" )
+#             && return 1 );
         
         binmode O, ":raw" ;
 
@@ -201,10 +211,10 @@ sub sub_entete() {
                     $valeurs[$rang_d] = 0;
                 }
                 else {
-                    &erreur( "E",
-                        "Code D/C mal renseigné : ligne $i  : "
-                            . ( uc( $valeurs[$rang_c] ) ) );
-                    return 1;
+		    $errmsg .= "Code D/C mal renseigne a la ligne " . ($i + 1) . "  : $valeurs[$rang_c] \n" ;
+		    $errdc++;
+                    #&erreur( "E", "Code D/C mal renseigné : ligne $i  : " . ( uc( $valeurs[$rang_c] ) ) );
+                    #return 1;
                 }
                 my $nb_reel = $#valeurs;
 
@@ -222,6 +232,9 @@ sub sub_entete() {
         }
         close I;
         close O;
+        if ($errdc > 0) {
+		return 1;
+	}
     }
 
     return 0;

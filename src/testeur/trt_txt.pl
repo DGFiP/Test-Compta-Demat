@@ -153,6 +153,46 @@ our $don_abs;
 #our $conn_distant;
 #our $ldap_distant;
 
+# Variable pour le calcul du taux de tva .
+my $taux_tva_reel = qq(round (CASE WHEN sum(CASE WHEN <clause_tva> THEN mtn_credit-mtn_debit ELSE 0.0 END) > 0.0 THEN
+   CASE WHEN sum(CASE WHEN NOT <clause_tva> THEN mtn_credit ELSE 0.0 END) != 0.0 THEN
+   sum(CASE WHEN <clause_tva> THEN mtn_credit-mtn_debit ELSE 0.0 END) * 100 /
+   sum(CASE WHEN NOT <clause_tva> THEN mtn_credit ELSE 0.0 END)
+   ELSE 0.0 END
+   WHEN sum(CASE WHEN <clause_tva> THEN mtn_credit-mtn_debit ELSE 0.0 END) < 0.0 THEN
+   CASE WHEN sum(CASE WHEN NOT <clause_tva> THEN mtn_debit ELSE 0.0 END) != 0.0 THEN
+   -sum(CASE WHEN <clause_tva> THEN mtn_debit-mtn_credit ELSE 0.0 END) * 100 /
+   sum(CASE WHEN NOT <clause_tva> THEN mtn_debit ELSE 0.0 END)
+   ELSE 0.0 END ELSE 0.0 END, 4));
+our $Calcul_Taux_TVA = qq(
+    case
+	when (-20.05 <= ($taux_tva_reel) and ($taux_tva_reel) <= -19.95) then -20.0000
+	when (-19.65 <= ($taux_tva_reel) and ($taux_tva_reel) <= -19.55) then -19.6000
+	when (-13.05 <= ($taux_tva_reel) and ($taux_tva_reel) <= -12.95) then -13.0000
+	when (-10.05 <= ($taux_tva_reel) and ($taux_tva_reel) <= -9.95) then -10.0000
+	when (-8.55 <= ($taux_tva_reel) and ($taux_tva_reel) <= -8.45) then -8.5000
+	when (-7.05 <= ($taux_tva_reel) and ($taux_tva_reel) <= -6.95) then -7.0000
+	when (-5.55 <= ($taux_tva_reel) and ($taux_tva_reel) <= -5.45) then -5.5000
+	when (-2.15 <= ($taux_tva_reel) and ($taux_tva_reel) <= -2.05) then -2.1000
+	when (-1.80 <= ($taux_tva_reel) and ($taux_tva_reel) <= -1.70) then -1.7500
+	when (-1.10 <= ($taux_tva_reel) and ($taux_tva_reel) <= -1.00) then -1.0500
+	when (-0.95 <= ($taux_tva_reel) and ($taux_tva_reel) <= -0.85) then -0.9000
+	when (-0.05 <= ($taux_tva_reel) and ($taux_tva_reel) <= 0.05) then 0.0000
+	when (0.85 <= ($taux_tva_reel) and ($taux_tva_reel) <= 0.95) then 0.9000
+	when (1.00 <= ($taux_tva_reel) and ($taux_tva_reel) <= 1.10) then 1.0500
+	when (1.70 <= ($taux_tva_reel) and ($taux_tva_reel) <= 1.80) then 1.7500
+	when (2.05 <= ($taux_tva_reel) and ($taux_tva_reel) <= 2.15) then 2.1000
+	when (5.45 <= ($taux_tva_reel) and ($taux_tva_reel) <= 5.55) then 5.5000
+	when (6.95 <= ($taux_tva_reel) and ($taux_tva_reel) <= 7.05) then 7.0000
+	when (8.45 <= ($taux_tva_reel) and ($taux_tva_reel) <= 8.55) then 8.5000
+	when (9.95 <= ($taux_tva_reel) and ($taux_tva_reel) <= 10.05) then 10.0000
+	when (12.95 <= ($taux_tva_reel) and ($taux_tva_reel) <= 13.05) then 13.0000
+	when (19.55 <= ($taux_tva_reel) and ($taux_tva_reel) <= 19.65) then 19.6000
+	when (19.95 <= ($taux_tva_reel) and ($taux_tva_reel) <= 20.05) then 20.0000
+	else $taux_tva_reel
+    end
+    );
+
 #RG:T:vérification présence module perl Postgres:E
 
 # ancienne gestion des logs
@@ -295,6 +335,7 @@ while ( $line = <SQL> ) {
     if (   $line !~ m/Serial/i
         && $line =~ /,/
         && $line !~ /;/
+        && $line !~ m/tva_type/i
         && $line !~ m/alto2_/i )
     {
         $line =~ /^\s*([a-zA-Z0-9_-]+)\s*([a-zA-Z]+).*,/;
@@ -610,6 +651,13 @@ sub controle() {
     local $/ = $crlf;
         
     while ( $line = <F> ) {
+# Modif le 10/04/2015 pour remplace les espaces insécables par un espace normal
+	# Les espaces insécables pour les fichiers UTF-8
+	$line =~ s/\xC2\xA0/ /g;
+	# Les espaces insécables pour les autres types de fichiers
+	$line =~ s/\xA0/ /g;
+# Fin modif du 	10/04/2015
+
         $line =~ s/\r\n|\r$//;
         $line =~ s/\c@//g;
         $line =~ s/ *(${separateur}) */$1/g;
@@ -649,11 +697,15 @@ sub controle() {
 #RG:T:vérification du format des champs supplémentaires à partir des 300 premières lignes du fichier:E
 #RG:T:vérification du format des champs supplémentaires à partir des 300 premières lignes du fichier:E
 #RG:T:vérification du format des champs supplémentaires détection numérique sur les 300lignes > numérique, date sur les 300 lignes > date, sinon text:E
+# Modification MC le 04/10/2016 car le nombre de champs attendus n'est pas correct. Le compteur donne la dernière valeur du tableau et on par de zéro. Il faut donc ajouter 1 dans le compteur pour l'affichage...
+	    my $valeurs_affichage = $#valeurs + 1;
+	    my $champs_affichage = $#champs + 1;
             &erreur( "E",
-"La structure du fichier est incorrecte : en ligne $nb_l : il y a $#valeurs  champs   au lieu des $#champs  champs  attendus ;"
+"La structure du fichier est incorrecte : en ligne $nb_l : il y a $valeurs_affichage champs   au lieu des $champs_affichage champs  attendus ;"
             );
             $nb_errs++;    #&finko("paschargé");
         }
+# Fin Modification MC du 04/10/2016
 
    # débit credit
    #RG:F:Tous les champs numériques contenant des , sont remplacés par des .:I
@@ -683,8 +735,10 @@ sub controle() {
                     $type_champs = "bigint";
                 }
 
-                elsif ($valeurs[$i] =~ m/^[0-9]+,[0-9]*$/
-                    || $valeurs[$i] =~ m/^[0-9]+\.[0-9]*$/ )
+               elsif ($valeurs[$i] =~ m/^[0-9]+,[0-9]*$/
+                   || $valeurs[$i] =~ m/^[0-9]+\.[0-9]*$/ )
+#                 elsif ($valeurs[$i] =~ m/^[0-9]+,[0-9]{1,11}$/
+#                     || $valeurs[$i] =~ m/^[0-9]+\.[0-9]{1,11}$/ )
                 {
                     $type_champs = "Numeric";    # (19,6)";
                 }
@@ -700,7 +754,7 @@ sub controle() {
                 else { $type_champs = "Text"; }
 
                 if ( not exists $r_mapping{ uc($champs[$i]) }{'type_prov'} ) {
-                    # $r_mapping{ uc($champs[$i]) }{'type_prov'} = $type_champs;
+			#$r_mapping{ uc($champs[$i]) }{'type_prov'} = $type_champs;
 
                 }
                 else {
@@ -708,7 +762,6 @@ sub controle() {
                         $type_champs )
                     {
                         $type_champs = "Text";
-
                     }
                 }
                 $r_mapping{ uc($champs[$i]) }{'type_prov'} = $type_champs;
@@ -1349,13 +1402,18 @@ sub faire_pdf() {
     my ( $sec, $min, $hour, $mday, $mon, $year ) = localtime(time);
     my $nouv_pdf =
       '../rapports/rapport_' . basename($file) . "_$hour$min$sec" . '.pdf';
-
+      
+# Modif du 10/04/2015 pour supprimer les espaces dans le nom du rapport à créer
+    $nouv_pdf =~ s/ {1,}//g;
+    
+    
     &sauve_pdf($nouv_pdf);
 
     # Save the PDF
 
     if ( ${OS} =~ m/linux/i ) {
-        system("evince $nouv_pdf");
+#        system("evince $nouv_pdf");
+	system("xdg-open $nouv_pdf 2> /dev/null");
     }
     else {
         system("start $nouv_pdf");

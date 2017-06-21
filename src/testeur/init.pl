@@ -51,6 +51,7 @@ our $dbhlog;
 my $dbh;
 our $REQ;
 our $log_seq;
+our $errmsg;
 
 # fin logs
 my $OS    = $Config{osname};
@@ -97,7 +98,7 @@ if ( $Aorte ne "t" ) {
     # parsing xml config
     ( $conn_local, $conn_distant, $ldap_distant ) = &parse_xml("alto2.xml");
 }
-
+  
 # print STDERR "$conn_local, $conn_distant, $ldap_distant";
 $serveur_choisi = $conn_local;
 
@@ -413,6 +414,11 @@ sub traitement() {
         binmode F, ":raw";
         local $/ = $crlf;
 
+        my $pref_chem = "";
+        if ( ${OS} =~ m/linux/i ) {
+		$pref_chem = "./";
+	}
+	
         while ( $line = <F> ) { last; }
         close F;
 
@@ -507,12 +513,12 @@ sub traitement() {
             $file =~ s/[\.xml]*$/.dat/i;
 
             $rc = system(
-"trt_xml$exe_ou_pl   -o \"$file\"  -f  \"$xml_file\"  -T EXERCICE  -t JOURNAL  -n $log_seq -e \"$line\" 2>${err_file}_xml"
+"${pref_chem}trt_xml$exe_ou_pl   -o \"$file\"  -f  \"$xml_file\"  -T EXERCICE  -t JOURNAL  -n $log_seq -e \"$line\" 2>${err_file}_xml"
             );    # ajouter -d  pour activer les traces sur xml
             if ( $rc > 0 ) { &finko("${err_file}_xml"); }
 
             system(
-"trt_txt$exe_ou_pl \"$file\" P $siren $alpage $datecloture $err_file $pcg  $bic  \"$nom_societe\" \"$ctl\"  $log_seq  \"$conn_base\" \"$id\" "
+"${pref_chem}trt_txt$exe_ou_pl \"$file\" P $siren $alpage $datecloture $err_file $pcg  $bic  \"$nom_societe\" \"$ctl\"  $log_seq  \"$conn_base\" \"$id\" "
             );    #>$log_file 2>$err_file ");
         }         # fin traitement xml_file
         else {    # traitement plat
@@ -544,14 +550,15 @@ sub traitement() {
 #$rc = system("trt_entete$exe_ou_pl   -o \"$entetefile\"  -f  \"$plat_file\"  -s \"$sep\" -n $log_seq 2>${err_file}_entete"            );
             $rc = &sub_entete( "$entetefile", "$plat_file", "$sep", $log_seq );
             if ( $rc > 0 ) {
-                &finko("${err_file}_entete");
+		&trace( "$errmsg", "finko" );
+                #&finko("${err_file}_entete");
             }
             $rc = system(
-"trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture $err_file  $pcg $bic  \"$nom_societe\" \"$ctl\" $log_seq  \"$conn_base\" \"$id\" "
+"${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture $err_file  $pcg $bic  \"$nom_societe\" \"$ctl\" $log_seq  \"$conn_base\" \"$id\" "
             );    #>$log_file 2>$err_file ");
             if ( $rc > 0 ) {
                 print STDERR
-"trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture $err_file  $pcg $bic  \"$nom_societe\" \"$ctl\" $log_seq   \"$conn_base\" \"$id\" "
+"${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture $err_file  $pcg $bic  \"$nom_societe\" \"$ctl\" $log_seq   \"$conn_base\" \"$id\" "
                   ;    # &finko("${err_file}";
                 exit 1;
             }

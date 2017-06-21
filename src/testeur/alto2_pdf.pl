@@ -226,24 +226,24 @@ sub ajoute_table() {
 		$pdf,
 		$page[$p],
 		$table0,
-		-x              => $left_edge_of_table / mm,
-		-start_y        => $ypos_of_last_line - 5 / mm,
-		-next_y         => $ypos_of_last_line - 5 / mm,
-		-start_h        => $ypos_of_last_line - 5 / mm,
-		-next_h         => $ypos_of_last_line - 5 / mm,
-		-w              => ($width) / mm,
-		-padding        => 4,
-		-padding_right  => 5,
-		-padding_top    => 5,
-		-padding_bottom => 5,
-		-gfx_color_odd  => "blue",
-		-gfx_color_even => "red",        #cell gfx color for even rows
-		-border         => $border,
-		-border_color   => 'grey',
-		-font_size      => $font_size,
-		-font         => $pdf->corefont( $font_name, -encoding => "utf8" ),
-		-column_props => $col_props,
-		-header_props => $hdr_props,
+		x              => $left_edge_of_table / mm,
+		start_y        => $ypos_of_last_line - 5 / mm,
+		next_y         => $ypos_of_last_line - 5 / mm,
+		start_h        => $ypos_of_last_line - 5 / mm,
+		next_h         => $ypos_of_last_line - 5 / mm,
+		w              => ($width) / mm,
+		padding        => 4,
+		padding_right  => 5,
+		padding_top    => 5,
+		padding_bottom => 5,
+#		-gfx_color_odd  => "blue",
+#		-gfx_color_even => "red",        #cell gfx color for even rows
+		border         => $border,
+		border_color   => 'grey',
+		font_size      => $font_size,
+		font         => $pdf->corefont( $font_name, -encoding => "utf8" ),
+		column_props => $col_props,
+		header_props => $hdr_props,
 	);
 
 # [-padding => "5",] # cell padding
@@ -307,7 +307,7 @@ sub ajoute_paragraphe() {
 
 sub sauve_pdf() {
 	my ($nom_pdf) = @_;
-	$pdf->saveas($nom_pdf);
+	$pdf->saveas("$nom_pdf");
 }
 
 sub ombre() {
