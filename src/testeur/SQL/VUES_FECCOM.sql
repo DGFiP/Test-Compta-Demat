@@ -1,12 +1,6 @@
 -- attention syntaxe :  
 -- fichier lu à 3 endroits dans le code source, syntaxe strict obligatoire
 
-
-
-
-
-
-
 DROP VIEW IF EXISTS vue_journal_<cloture>;
 
 -- modif 27/06/2014 : concaténation cpt gén(sans enlever les 0) - cpt aux
@@ -47,6 +41,8 @@ CASE
 			WHEN t.alto2_taux_tva < 0::numeric THEN 'Débiteur' 
 			ELSE 'Nul' 
 END AS "Sens TVA",
+-- 31/07/2015 : ajout de la colonne TVA type
+t.tva_type            AS "TVA type", 
 abs(t.alto2_taux_tva) AS "Taux TVA" 
 <vue_champs_compl>
 FROM fec_<cloture> t 

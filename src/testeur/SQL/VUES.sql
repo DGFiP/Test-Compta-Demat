@@ -67,7 +67,7 @@ num_piece AS "Numéro Pièce",
            WHEN taux_tva > 0::numeric THEN 'Créditeur'::text
            WHEN taux_tva < 0::numeric THEN 'Débiteur'::text
            ELSE 'Nul'::text
-       END AS "Sens TVA",
+       END AS "Sens TVA", 
 abs(taux_tva) AS "Taux TVA",
 nb_ligne AS "Nombre de lignes",
        CASE
@@ -128,11 +128,16 @@ l.id_ligne AS "ID",
            WHEN e.taux_tva < 0::numeric THEN 'Débiteur'::text
            ELSE 'Nul'::text
        END AS "Sens TVA",
+-- 31/07/2015 : ajout de la colonne TVA type
+l.tva_type      AS "TVA type", 
 abs(e.taux_tva) AS "Taux TVA",
 e.nb_ligne AS "Nombre de lignes",
        CASE
-           WHEN e.ecr_type = 1 OR e.ecr_type = 11 THEN 'Clôture'::text
-           WHEN e.ecr_type = 2 OR e.ecr_type = 12 THEN 'A. Nouveau'::text
+--23/11/2015 : prise en compte proposition M. FERARD
+--           WHEN e.ecr_type = 1 OR e.ecr_type = 11 THEN 'Clôture'::text
+--           WHEN e.ecr_type = 2 OR e.ecr_type = 12 THEN 'A. Nouveau'::text
+	       WHEN l.ecr_type = 1 OR l.ecr_type = 11 THEN 'Clôture'::text
+           WHEN l.ecr_type = 2 OR l.ecr_type = 12 THEN 'A. Nouveau'::text
            ELSE ''::text
        END AS "Type écriture",
        CASE
@@ -166,6 +171,8 @@ CREATE VIEW vue_erreur_<cloture> AS
 "Lettrage",
 "ID",
 "Sens TVA",
+-- 31/07/2015 : ajout de la colonne TVA type
+"TVA type", 
 "Taux TVA",
 "Nombre de lignes",
 "Type écriture",

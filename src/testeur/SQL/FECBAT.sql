@@ -41,6 +41,7 @@ CREATE TABLE fec_<cloture> ( -- La clôture est au format AAAAMMJJ
 	prestation text DEFAULT '', -- Champ "Natpresta" ou "NatOp"
 	-- client text DEFAULT '', -- Champ "idClient"
 	<champs_complementaires>
+	tva_type text DEFAULT '', -- champs calculé
 	alto2_taux_tva numeric DEFAULT 0, -- champs calculé
 	CONSTRAINT pk_fec_<cloture> PRIMARY KEY (id_ligne)
 	);

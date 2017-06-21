@@ -29,22 +29,14 @@ commit ;
 
 INSERT INTO ecriture_<cloture>
    SELECT num_ecr, min(date_cpt), min(code_jrnal),
-   min(code_jrnal)=max(code_jrnal),
+   min(code_jrnal) = max(code_jrnal),
    sum(mtn_debit) = sum(mtn_credit),
    min(date_cpt) = max(date_cpt),
    min(num_piece) = max(num_piece),
    min(date_piece) = max(date_piece),
    min(code_lettrage) = max(code_lettrage),
    min(lib_jrnal), array_agg(distinct lib_ecriture), min(date_piece), min(num_piece), min(code_lettrage), count(*),
-   round (CASE WHEN sum(CASE WHEN <clause_tva> THEN mtn_credit-mtn_debit ELSE 0.0 END) > 0.0 THEN
-   CASE WHEN sum(CASE WHEN NOT <clause_tva> THEN mtn_credit ELSE 0.0 END) != 0.0 THEN
-   sum(CASE WHEN <clause_tva> THEN mtn_credit-mtn_debit ELSE 0.0 END) * 100 /
-   sum(CASE WHEN NOT <clause_tva> THEN mtn_credit ELSE 0.0 END)
-   ELSE 0.0 END
-   WHEN sum(CASE WHEN <clause_tva> THEN mtn_credit-mtn_debit ELSE 0.0 END) < 0.0 THEN
-   CASE WHEN sum(CASE WHEN NOT <clause_tva> THEN mtn_debit ELSE 0.0 END) != 0.0 THEN
-   -sum(CASE WHEN <clause_tva> THEN mtn_debit-mtn_credit ELSE 0.0 END) * 100 /
-   sum(CASE WHEN NOT <clause_tva> THEN mtn_debit ELSE 0.0 END)
-   ELSE 0.0 END ELSE 0.0 END, 1), min(ecr_type), sum(mtn_debit), sum(mtn_credit) 
+   <calcultauxtva>,
+   min(ecr_type), sum(mtn_debit), sum(mtn_credit) 
    FROM fec_<cloture> GROUP BY num_ecr ;
 

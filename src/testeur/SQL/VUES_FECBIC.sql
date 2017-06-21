@@ -43,6 +43,8 @@ CASE
 			WHEN t.alto2_taux_tva < 0::numeric THEN 'Débiteur' 
 			ELSE 'Nul' 
 END AS "Sens TVA",
+-- 31/07/2015 : ajout de la colonne TVA type
+t.tva_type            AS "TVA type",   
 abs(t.alto2_taux_tva) AS "Taux TVA" 
 <vue_champs_compl>
 FROM fec_<cloture> t 
