@@ -114,7 +114,7 @@ sub sub_entete() {
     }
 
  #RG:T: mapping des entetes fournies dans le fichier avec le format arrêté:I
-    open( STRUC, "< fmt_arrete" )
+    open( STRUC, "< ${ProgramData}/${Rep_Alim_ou_Testeur}/fmt_arrete" )
         or ( $errmsg = "Impossible de trouver fmt_arrete" && return 1 );
 #        or ( &erreur( "E", "Impossible de trouver fmt_arrete" ) && return 1 );
     local $/ = "\n";

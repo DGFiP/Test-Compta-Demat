@@ -41,11 +41,28 @@ use Getopt::Std;
 use File::Copy;
 use utf8;
 no utf8;
+use File::Basename;
+use File::Copy;
+use File::Path;
+use Env;
+use Cwd qw ( abs_path );
+
+my $currdir   = dirname( abs_path($0) );
+require "$currdir/environnement_alto2.pl";
+&Env_Path;
+our $ProgramFiles = "$ENV{ProgramFiles}";
+our $ProgramData = "$ENV{ProgramData}";
 
 # Extraction des paramètres
 our %opts;
 
 require "alto2_fonctions.pl";
+
+our $Rep_Alim_ou_Testeur = "alimentation";
+our $Aorte = &aorte();
+if ( $Aorte eq "t" ) {
+    $Rep_Alim_ou_Testeur = "testeur";
+}
 
 # logs en base pg
 our $dbhlog;
@@ -317,12 +334,12 @@ sub alimTables {
 					journal_ecriture§ModeRglt;20;20;DS;paiement_mode
 					journal_ecriture§NatOp;21;21;;prestation
 					journal_ecriture§IdClient;22;22;;client
-					journal_ecriture§Resultat;23;23;;ecr_type
-					journal_ecriture_ligne§Montant;0;24;NU;mtn_debit
-					journal_ecriture_ligne§Sens;0;25;;mtn_credit
+					journal_ecriture_ligne§Montant;0;23;NU;mtn_debit
+					journal_ecriture_ligne§Sens;0;24;;mtn_credit
 				);
-				$pos_montant = 24;
-				$pos_sens = 25;
+#					journal_ecriture§Resultat;23;23;;ecr_type
+				$pos_montant = 23;
+				$pos_sens = 24;
 			}
 		}
 	}
