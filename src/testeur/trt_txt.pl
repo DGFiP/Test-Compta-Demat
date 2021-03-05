@@ -32,7 +32,7 @@
 
 ##  a enregistrer en utf8
 our $dbhlog;
-require "alto2_fonctions.pl";
+
 use Config;
 use POSIX qw/ceil/;
 use DBI;
@@ -40,7 +40,9 @@ use Tk;
 use Tk::ProgressBar;
 use Tk::Pane;
 use Tk::Dialog;
-use Cwd;
+use Tk::MsgBox;
+#use Cwd;
+use Cwd qw ( abs_path );
 use Env;
 use strict;
 use utf8;
@@ -49,6 +51,21 @@ use File::Basename;
 use File::Copy;
 use File::Path;
 use Encode;
+
+my $currdir   = dirname( abs_path($0) );
+require "$currdir/environnement_alto2.pl";
+&Env_Path;
+our $ProgramFiles = "$ENV{ProgramFiles}";
+our $ProgramData = "$ENV{ProgramData}";
+
+require "alto2_fonctions.pl";
+
+our $Rep_Alim_ou_Testeur = "alimentation";
+our $Aorte = &aorte();
+if ( $Aorte eq "t" ) {
+    $Rep_Alim_ou_Testeur = "testeur";
+}
+
 
 our $OS = $Config{osname};
 our $Archi = $Config{archname};
@@ -128,23 +145,23 @@ our $dt_h   = '[T ][0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}';
 
 #var traitement
 our $doublon                 = 0;
-    our $nb_ligne_base         ;
-    our @liste_precedents_champs = "";
-    our $lu = 0;
-    our $percent_done = 0;
-    our $percent_sav  = 0;
-    our $Ligne_Tete;
-    our $fentop;
-    our $fen;
-    our $fen2;
-    our $Ligne_vide;
-    our $progress;
-    our $Alert_Texte;
-    our $Ligne_Alert;
-    our $nb_l        = 0;
-    our $rang_d      = 0;
-    our $rang_c      = 0;
-    our $type_champs = "Text";
+our $nb_ligne_base         ;
+our @liste_precedents_champs = "";
+our $lu = 0;
+our $percent_done = 0;
+our $percent_sav  = 0;
+our $Ligne_Tete;
+our $fentop;
+our $fen;
+our $fen2;
+our $Ligne_vide;
+our $progress;
+our $Alert_Texte;
+our $Ligne_Alert;
+our $nb_l        = 0;
+our $rang_d      = 0;
+our $rang_c      = 0;
+our $type_champs = "Text";
 # Ajout SPECs 22 11/01/2015
 our %Donnees_Absentes;
 our $don_abs;
@@ -201,7 +218,6 @@ $dbhlog = &connexion_log( "altoweb2", $dbh );
 
 #RG:T:vérification connection postgres:I
 # récupération paramètre version dans le nom du dossier java
-
 $entetefile =~ s/$/.entete/;
 
 open( F, ${entetefile} ) or die "Impossible de trouver ${entetefile}";
@@ -254,9 +270,8 @@ while ( $line = <F> ) {
 }
 close(F);
 local $/ = "\n";
-
 #RG:F:récupérer les noms de l'arrêté  pour afficher les champs absents :I
-open( STRUC, "< fmt_arrete" )
+open( STRUC, "< ${ProgramData}/${Rep_Alim_ou_Testeur}/fmt_arrete" )
   or ( &erreur( "E", "Impossible de trouver fmt_arrete" ) && &finko );
 my $bil_rang = 0;
 
@@ -295,11 +310,10 @@ while ( $line = <STRUC> ) {
 
 }
 close(STRUC);
-
 #fin structure
 
-open( SQL, "< SQL/FEC${cat_revenus}.sql" )
-  or die "Impossible de trouver SQL/FEC${cat_revenus}.sql";
+open( SQL, "< ${ProgramData}/${Rep_Alim_ou_Testeur}/SQL/FEC${cat_revenus}.sql" )
+  or die "Impossible de trouver ${ProgramData}/${Rep_Alim_ou_Testeur}/SQL/FEC${cat_revenus}.sql";
 
 # Ajout SPECs 22 11/01/2015
 if ( ${cat_revenus} eq "COM" || ${cat_revenus} eq "BIC") {
@@ -411,7 +425,6 @@ while ( $line = <SQL> ) {
     }
 }
 close(SQL);
-
 #RG:T: fmt_arrete dispose de plus de lignes que fec...sql , purge fonction type compta les lignes en trop:I
 $nb_bilanctl = $i - 1;
 foreach my $col_bilan ( keys %r_bilanctl ) {
@@ -526,9 +539,7 @@ else {
 sub traitement() {
     
     
-    
     &controle();
-    
     if ( ( &aorte() eq "a" ) and  ( uc($ctl) ne "CTL" ) ) {
         my $MODULE ="alto2_alim.pl";
         do $MODULE ;
@@ -538,8 +549,9 @@ sub traitement() {
 
 sub controle() {
 
+    my $nb_sep_milliers = 0;
     # $params1->destroy();
-     $nb_ligne_base   = $#champs_base + 1;
+    $nb_ligne_base   = $#champs_base + 1;
     for ( $i = 0 ; $i <= $#champs ; $i++ ) {
         if ( $Coche[$i] eq "1" ) {
             $champs[$i] = &supprime_accent( $champs[$i] );
@@ -579,7 +591,6 @@ sub controle() {
     }
 
     if ( $doublon > 0 ) { return; }
-
     for ( $k = 0 ; $k <= $#champs ; $k++ ) {
 
         if ( !exists $r_mapping{ uc( $champs[$k] ) } ) {
@@ -649,7 +660,9 @@ sub controle() {
     open( F, "< ", "$file" );
     binmode F, ":raw" ;
     local $/ = $crlf;
-        
+#   si on veut corriger le bug lié à la presence simultanée des separateurs tabulation et pipe decommenter les lignes 
+#   634 et 650 a 656    
+#    my $pattern = '\|';
     while ( $line = <F> ) {
 # Modif le 10/04/2015 pour remplace les espaces insécables par un espace normal
 	# Les espaces insécables pour les fichiers UTF-8
@@ -664,7 +677,13 @@ sub controle() {
         $line =~ s/ +$//;
         chomp $line;
         $nb_l++;
-
+#        if ($separateur == '\t'){
+#            if ($line=~m/$pattern/){
+#                &erreur( "E","la structure du fichier est incorrecte, une ligne :$nb_l contient le separateur tabulation et le separateur pipe "
+#            );
+#            $nb_errs++;
+#                }
+#            }
         if ( $nb_l == 1 ) { next; }
 
         $percent_sav = int($percent_done);
@@ -711,7 +730,6 @@ sub controle() {
    #RG:F:Tous les champs numériques contenant des , sont remplacés par des .:I
    #RG:F:Si débit présent, et crédit absent crédit=0:I
    #RG:F:Si crédit présent, et débit absent débit=0:I
-
         for ( $i = 0 ; $i <= $#champs ; $i++ ) {
             my $champs_log = $r_mapping{ uc( $champs[$i] ) }{'champs_arrete'};
 
@@ -811,10 +829,27 @@ sub controle() {
                     if ( $valeurs[$i] eq "" ) {
                         $valeurs[$i] = 0;
                     }
+                    # dans un premier temps on controle si il y a un point pour les formats numeriques 
+                    # si il y a un point on met le traitement en erreur
+                    # dans un second temps pour des questions de compatibilites de formats perl on remplace les virgules des formats numeriques par des points
+                    
+                    # RB 2019 Interdiction du point en entree pour les formats numeriques
+                    if ( ( $valeurs[$i] =~ m/\./ ) ) {
+                        &erreur( "E",
+                                "Le champ "
+                              . $champs_log
+                              . " n'est pas au bon format, : ligne $nb_l : un format numérique avec un separateur , au lieu de . est attendu  : "
+                              . $valeurs[$i]
+                              . " : ;" );
+                        $nb_errs++;
+                    }
+                    # RB 2019 Remplacement des virgules par des points
                     if ( !( $valeurs[$i] =~ /\./ ) ) {
                         $valeurs[$i] =~ s/,/./;
                     }
-                    if ( $valeurs[$i] =~ m/^ *[0-9]+ [0-9]+/ ) {
+                    $nb_sep_milliers = $valeurs[$i];
+                    $nb_sep_milliers =~ s/[^ \.,]//g;
+                    if ( $valeurs[$i] =~ m/^ *[0-9]+ [0-9]+/ || length($nb_sep_milliers) > 1 ) {
                         &erreur( "E",
                                 "Le champ "
                               . $champs_log
@@ -842,6 +877,7 @@ sub controle() {
 
                         $nb_errs++;
                     }
+                    # RB EVOLUTION 2019 la correction attendue sur les separations virgules et point des chiffres se trouvent surement ici
                     if ( $champs[$i] =~ m/MTN_DEBIT/i ) {
                         $rang_d = $i;
                         $valeurs[$i] = 0 if ( !defined $valeurs[$i] );
@@ -995,7 +1031,6 @@ sub controle() {
     }    # fin parcours fichier wend
 
     close(F);
-
     local $/ = "\n";
 
     $somme{'DCC'} = int( $somme{'DCC'} * 100 + 0.500001 ) / 100;
@@ -1021,24 +1056,33 @@ sub controle() {
     # --> fin controle
     &erreur( "I", "Fin de Contrôle" );
     &maj_log($dbhlog);    # mise en persistance table hash
-
 # Ajout de cette fonction suite à la SPEC 23 le 16/02/2015
     if ( ( $nb_errs > 0 ) && ( uc($ctl) eq "CTL" ) && ( &aorte() ne "t" ) ) {
+	&Fenetre_KO();
 	&faire_pdf();
 	# pour laisser le temps au pdf de s'afficher...
-	sleep 5;
-	&Fenetre_KO();
+	sleep(5);
+	#si on veut un affichage avec un contenu dans la fenetre en cas d'erreur decommenter la ligne suivante
+	#&finko("paschargé");
+	&finko;
     } else {
 # Fin ade cette fonction suite à la SPEC 23 le 16/02/2015
-	if ( uc($ctl) eq "CTL" or &aorte() eq "t" ) {
-		&faire_pdf();
-		exit 0;
-	}
-
-	if ( ( $nb_errs > 0 ) && ( uc($ctl) ne "CTL" ) ) {
-		&faire_pdf();
-		&finko("paschargé");
-	}
+# partie controle java ou testeur perl
+	   if ( uc($ctl) eq "CTL" or &aorte() eq "t" ) { 
+	       if ($nb_errs > 0){
+	       	    # pour laisser le temps au pdf de s'afficher...
+                sleep(5);
+	            &Fenetre_KO();
+	       }
+	       &faire_pdf();
+	       #on ajoute le exit 0 : si pas d'erreur il faut sortir du programme
+		    exit 0;
+	   }
+       # partie alim java avec erreur
+	   if ( ( $nb_errs > 0 ) && ( uc($ctl) ne "CTL" ) ) {
+		  &faire_pdf();
+		  &finko("paschargé");
+	   }
     }
 
     
@@ -1109,7 +1153,8 @@ sub finko () {
                 exec("gedit $rc ");
             }
             else {
-                exec("start wordpad $rc ");
+                #exec("start wordpad $rc ");
+                exec("start notepad \"${rc}\" ");
             }
         }
     }
@@ -1400,8 +1445,7 @@ sub faire_pdf() {
 # Fin ajout SPECs 22 11/01/2015
 
     my ( $sec, $min, $hour, $mday, $mon, $year ) = localtime(time);
-    my $nouv_pdf =
-      '../rapports/rapport_' . basename($file) . "_$hour$min$sec" . '.pdf';
+    my $nouv_pdf = "${ProgramData}" . '/rapports/rapport_' . basename($file) . "_$hour$min$sec" . '.pdf';
       
 # Modif du 10/04/2015 pour supprimer les espaces dans le nom du rapport à créer
     $nouv_pdf =~ s/ {1,}//g;
@@ -1436,27 +1480,37 @@ sub Tk::Error {
     &finko;
 }
 
+
+
+
 # Ajour de cette fonction suite à la SPEC 23 le 16/02/2015
 sub Fenetre_KO() {
 
-	my $Ko_fenetre_principale = $fentop->Toplevel( -title => 'Chargement impossible' );
-	my $KO_frame1 = $Ko_fenetre_principale->Frame;
-	my $KO_zoneT = $KO_frame1->Label(-text=>"  \n ");
-	$KO_zoneT->pack();
-	my $KO_zoneVersion = $KO_frame1->Label(-text=>&utf8toutf8("\nLe FEC ne peut être intégré dans ALTO2.\n  Un nouveau fichier est nécessaire.\n"), -font => '{Garamond} 15');
-	$KO_zoneVersion->pack();
-	$KO_frame1->pack();
-	my $KO_frame2 = $Ko_fenetre_principale->Frame;
-	my $KO_Button1 = $KO_frame2->Button(
-			-text => 'Ok',
-			-font => '{Garamond} 10',
-			-command => sub { &finko("paschargé"); }
-			);
-	$KO_Button1->pack(-pady => '40', -padx => '200', -side => 'left'
-			);
-	$KO_frame2->pack();
-	$Ko_fenetre_principale->focusForce;
+    my $msgFecNonConforme = $fentop->MsgBox(
+        -title    => 'FEC non conforme',
+        -type     => 'OK',
+        -message  => &utf8toutf8("\nLe FEC n'est pas conforme en l'état.\n  Un nouveau fichier est nécessaire.\n")
+    );
+    my $reponse = $msgFecNonConforme->Show;
 
+
+#	my $Ko_fenetre_principale = $fentop->Toplevel( -title => 'FEC non conforme' );
+#	my $KO_frame1 = $Ko_fenetre_principale->Frame;
+#	my $KO_zoneT = $KO_frame1->Label(-text=>"  \n ");
+#	$KO_zoneT->pack();
+#	my $KO_zoneVersion = $KO_frame1->Label(-text=>&utf8toutf8("\nLe FEC n'est pas conforme en l'état.\n  Un nouveau fichier est nécessaire.\n"), -font => '{Garamond} 15');
+#	$KO_zoneVersion->pack();
+#	$KO_frame1->pack();
+#	my $KO_frame2 = $Ko_fenetre_principale->Frame;
+#	my $KO_Button1 = $KO_frame2->Button(
+#			-text => 'Ok',
+#			-font => '{Garamond} 10',
+#			-command => sub { $Ko_fenetre_principale->destroy; return }
+#			);
+#	$KO_Button1->pack(-pady => '40', -padx => '200', -side => 'left'
+#			);
+#	$KO_frame2->pack();
+#	$Ko_fenetre_principale->focusForce;
 }
 
 # dernière ligne !!!!

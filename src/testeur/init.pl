@@ -43,8 +43,15 @@ use File::Copy;
 use File::Path;
 use Archive::Tar;
 
+my $currdir   = dirname( abs_path($0) );
+require "$currdir/environnement_alto2.pl";
+&Env_Path;
+our $ProgramFiles = "$ENV{ProgramFiles}";
+our $ProgramData = "$ENV{ProgramData}";
+
 require "alto2_fonctions.pl";
 require "trt_entete.pl";
+
 
 # logs en base pg
 our $dbhlog;
@@ -78,9 +85,16 @@ my $nom_societe;
 my $exe_ou_pl = basename($0);
 my $dirname   = dirname($0);
 my $currdir   = dirname( abs_path($0) );
-my $workdir   = $currdir . "/temp/";
+our $Rep_Alim_ou_Testeur = "alimentation";
 my $ctl       = $ARGV[0];
-my $err_init  = "log/err_" . basename( $0, qw(.exe) ) . "_.log";
+our $Aorte = &aorte();
+if ( $Aorte eq "t" ) {
+    $Rep_Alim_ou_Testeur = "testeur";
+}
+#my $workdir   = $currdir . "/temp/";
+my $workdir   = $ProgramData . "/${Rep_Alim_ou_Testeur}/temp/";
+#my $err_init  = "log/err_" . basename( $0, qw(.exe) ) . "_.log";
+my $err_init  = $ProgramData . "/${Rep_Alim_ou_Testeur}/log/err_" . basename( $0, qw(.exe) ) . "_.log";
 our $conn_local   = "";
 our $conn_distant = "";
 our $ldap_distant = "";
@@ -91,10 +105,8 @@ our $mot_passe ;
 our $serveur_choisi = "";
 open( IF, "> $err_init" );
 close IF;    # creation vide , ensuite trace en ajout...
-our $Aorte = &aorte();
 
 if ( $Aorte ne "t" ) {
-
     # parsing xml config
     ( $conn_local, $conn_distant, $ldap_distant ) = &parse_xml("alto2.xml");
 }
@@ -116,7 +128,9 @@ if ( ${OS} =~ m/linux/i ) {
 else {
     # todo : remplacer par dirname ?
 
-    $workdir = "${currdir}/temp/";
+#    $workdir = "${currdir}/temp/";
+#    $start_dir = substr( "${currdir}", 0, 2 );
+    $workdir = "${ProgramData}/${Rep_Alim_ou_Testeur}/temp/";
     $start_dir = substr( "${currdir}", 0, 2 );
 }
 if ( !-d $workdir ) {
@@ -344,7 +358,7 @@ sub traitement() {
             #RG:T:Traitement spécifique pour les anciens formats ebp... :I
             &init_dossier or die "Probleme d'accès à Postgres";
             my $curdir = dirname( @{$af_files}[0] );
-            $err_file = "log/err_" . basename( ${file} ) . "_AF.log";
+            $err_file = "${ProgramData}" . "/${Rep_Alim_ou_Testeur}/log/err_" . basename( ${file} ) . "_AF.log";
             $rc =
 `trt_old_format_cpta$exe_ou_pl -f \"$file\" -n $log_seq -t \"$exe_ou_pl\" -c \"$curdir\" 2> \"${err_file}\"`;
             if ( $rc eq "Abort" ) {
@@ -370,7 +384,7 @@ sub traitement() {
                 $fen->update;
                 return;
             }
-            $err_file = "log/err_" . basename( ${file} ) . "_access.log";
+            $err_file = "${ProgramData}" . "/${Rep_Alim_ou_Testeur}/log/err_" . basename( ${file} ) . "_access.log";
             &init_dossier or die "Probleme d'accès à Postgres";
             $rc =
 `trt_mdb$exe_ou_pl   -f \"$file\"  -l \"${err_file}_mdb\" -n $log_seq 2> \"${err_file}_mdb\"`;
@@ -399,8 +413,8 @@ sub traitement() {
 
             return;
         }
-        $log_file = "log/log_${siren}_$datecloture.log";
-        $err_file = "log/err_${siren}_$datecloture.log";
+        $log_file = "${ProgramData}" . "/${Rep_Alim_ou_Testeur}/log/log_${siren}_$datecloture.log";
+        $err_file = "${ProgramData}" . "/${Rep_Alim_ou_Testeur}/log/err_${siren}_$datecloture.log";
 
         &init_dossier or die "Probleme d'accès à Postgres";
 
@@ -426,8 +440,8 @@ sub traitement() {
         $line =~ s/\c@//g;
 
         chomp $line;
-        if ( $line =~ m/^<\?xml/i || $line =~ m/^...<\?xml/i )
-        {    # traitement xml_file
+	if ( $line =~ m/^<\?xml/i || $line =~ m/^...<\?xml/i )
+	{    # traitement xml_file
                 # <?xml  précédé d'un BOM éventuel
              #RG:T: Si la première ligne du fichier est au format xml, conversion en fichier texte:I
             $line =~ s/.*encoding="(.*)"\?>/$1/;
@@ -455,72 +469,120 @@ sub traitement() {
                     }
             }
 		
-            if ( ${OS} !~ m/linux/i ) {
+#            if ( ${OS} !~ m/linux/i ) {
                 
-                my $cont_xsd = &modif_acces_direct(
-                    $file, 300,
-                    'xsi:noNamespaceSchemaLocation="file:formatA47A',
-                    '     xsi:noNamespaceSchemaLocation="formatA47A'
-                );
-                if ( $cont_xsd == 2 ) {
-                    &trace( "Problème sur la gestion du lien file xsd",
-                        "finko" );
-                }
-		elsif ( $cont_xsd == 3 ) {
-			&faire_pdf(
-"Le fichier XML ne respecte pas les spécifications publiés sur le site impots.gouv.fr, relatives à la structure du fichier XSD."
-                    );
-			exit 1;
+	    my $cont_xsd = &modif_acces_direct(
+		    $file, 300,
+		    'xsi:noNamespaceSchemaLocation="file:formatA47A',
+		    '     xsi:noNamespaceSchemaLocation="formatA47A'
+	    );
+	    if ( $cont_xsd == 2 ) {
+		    &trace( "Problème sur la gestion du lien file xsd",
+		    "finko" );
+	    }
+	    elsif ( $cont_xsd == 3 ) {
+		    &faire_pdf(
+    "Le fichier XML ne respecte pas les spécifications publiés sur le site impots.gouv.fr, relatives à la structure du fichier XSD."
+		    );
+		    exit 1;
+	    }
+
+	    chdir "${ProgramData}/${Rep_Alim_ou_Testeur}";
+	    $tar = Archive::Tar->new("formats_xsd.tar");
+	    &trace( $tar->error, "finko" ) unless $tar->extract;
+	    chdir "${ProgramFiles}/${Rep_Alim_ou_Testeur}";
+	    
+	    my $xmllintpath = "";
+	    if ( ${OS} !~ m/linux/i ) {
+		if ( -d "${ProgramFiles}/xmllint_x86_64" ) {
+			$xmllintpath = "${ProgramFiles}/xmllint_x86_64/";
+		    } else {
+# 		    	$tar = Archive::Tar->new("xmllint.tar");
+# 			&trace( $tar->error, "finko" ) unless $tar->extract;
+# 			if ( $Archi =~ /win32-x64/i ) {
+# 				$xmllintpath = "${currdir}/xmllint_x86_64/";
+# 			    } else {
+# 				if ( $Archi =~ /win32/i ) {
+# 					$xmllintpath = "${currdir}/xmllint_x86/";
+# 				} else {
+# 					$xmllintpath = "${currdir}/xmllint_AMD64/";
+# 				}
+# 			}
+			$xmllintpath = "${ProgramFiles}/xmllint_x86/";
 		}
+	    }
+	    
+            my $rc2 = 0;    
+#             if ( ${OS} !~ m/linux/i ) {
+# 
+#                 # $? retourne  0 ok, ou 1 ko , le $rc est mis en base
+#                 # if ($ctl ne "NOX" ) {
+#                 $rc = `StdInParse.exe -n -f -s -v=always < \"$file\"   2>&1 `;
+# 
+#                 # }
+#                 #else {
+#                 #	$ctl='CTL';
+#                 #	$rc="";
+#                 #}
+#                 $rc2 = $?;
+# 	    }
+# 	    else {
+		my $read_buffer = "";
+		open( FT, "+< :raw", $file ) or die "impossible";
 
-                $tar = Archive::Tar->new("formats_xsd.tar");
-                &trace( $tar->error, "finko" ) unless $tar->extract;
+		my $read_nb = 0;
+		$read_nb = sysread FT, $read_buffer, 300;
+		close FT;
+		if ( $read_buffer =~ m/noNamespaceSchemaLocation(.*)=(.*)"(.*).xsd"(.*)/i ) {
+			my $xsdfile = $3 . ".xsd";
+			$xsdfile =~ s/file://;
+			$xsdfile = "${ProgramData}/${Rep_Alim_ou_Testeur}/${xsdfile}";
+			$rc = `\"${xmllintpath}xmllint\" --noout \"$file\" --schema \"$xsdfile\" 2>&1 `;
+			$rc2 = $?;
+		} else {
+			$rc2 = 1;
+		}
+#	    }
+		if ( $rc2 ne 0 ) {
 
-                # $? retourne  0 ok, ou 1 ko , le $rc est mis en base
-                # if ($ctl ne "NOX" ) {
-                $rc = `StdInParse.exe -n -f -s -v=always < \"$file\"   2>&1 `;
+			# erreur
+			$text_alert .= &utf8toutf8(
+	"Format de fichier  non pris en charge  \n Fichier xml non conforme au xsd "
+			);
+			
+			&trace( "Pb au parseur xml : $rc ", "" );
+			$fille->destroy() if defined $fille;
+			undef @files;
+			$fen->update;
 
-                # }
-                #else {
-                #	$ctl='CTL';
-                #	$rc="";
-                #}
-                my $rc2 = $?;
-                if ( $rc2 ne 0 ) {
+			# fiche 14
+			&faire_pdf(
+	"Le fichier XML ne respecte pas les spécifications publiés sur le site impots.gouv.fr, relatives à la structure du fichier XSD."
+			);
+			exit 1;
 
-                    # erreur
-                    $text_alert .= &utf8toutf8(
-"Format de fichier  non pris en charge  \n Fichier xml non conforme au xsd "
-                    );
-                    
-		    &trace( "Pb au parseur xml : $rc ", "" );
-                    $fille->destroy() if defined $fille;
-                    undef @files;
-                    $fen->update;
+			# return;
+		}
+		my $xmllint_dir = "${currdir}/xmllint_x86";
+		rmtree(${xmllint_dir});
+		$xmllint_dir = "${currdir}/xmllint_x86_64";
+		rmtree(${xmllint_dir});
+		$xmllint_dir = "${currdir}/xmllint_AMD64";
+		rmtree(${xmllint_dir});
+		unlink <format*xsd>;
+	#	}
+		$xml_file = $file;
+		$file =~ s/[\.xml]*$/.dat/i;
 
-                    # fiche 14
-                    &faire_pdf(
-"Le fichier XML ne respecte pas les spécifications publiés sur le site impots.gouv.fr, relatives à la structure du fichier XSD."
-                    );
-                    exit 1;
+		$rc = system(
+	"${pref_chem}trt_xml$exe_ou_pl   -o \"$file\"  -f  \"$xml_file\"  -T EXERCICE  -t JOURNAL  -n $log_seq -e \"$line\" 2>${err_file}_xml"
+		);    # ajouter -d  pour activer les traces sur xml
+		if ( $rc > 0 ) { &finko("${err_file}_xml"); }
 
-                    # return;
-                }
-
-                unlink <format*xsd>;
-            }
-            $xml_file = $file;
-            $file =~ s/[\.xml]*$/.dat/i;
-
-            $rc = system(
-"${pref_chem}trt_xml$exe_ou_pl   -o \"$file\"  -f  \"$xml_file\"  -T EXERCICE  -t JOURNAL  -n $log_seq -e \"$line\" 2>${err_file}_xml"
-            );    # ajouter -d  pour activer les traces sur xml
-            if ( $rc > 0 ) { &finko("${err_file}_xml"); }
-
-            system(
-"${pref_chem}trt_txt$exe_ou_pl \"$file\" P $siren $alpage $datecloture $err_file $pcg  $bic  \"$nom_societe\" \"$ctl\"  $log_seq  \"$conn_base\" \"$id\" "
-            );    #>$log_file 2>$err_file ");
-        }         # fin traitement xml_file
+		system(
+	"${pref_chem}trt_txt$exe_ou_pl \"$file\" P $siren $alpage $datecloture $err_file $pcg  $bic  \"$nom_societe\" \"$ctl\"  $log_seq  \"$conn_base\" \"$id\" "
+		);    #>$log_file 2>$err_file ");
+	}         # fin traitement xml_file
         else {    # traitement plat
              #RG:T:recherche du séparateur dans le fichier  tab ou | traitement spécifique:I
              # détection type fichier
@@ -594,7 +656,8 @@ sub finko () {
         exec("gedit ${log_temp}");
     }
     else {
-        exec("start wordpad \"${log_temp}\"");
+        #exec("start wordpad \"${log_temp}\"");
+        exec("start notepad \"${log_temp}\" ");
     }
 
     exit 1;
@@ -603,9 +666,9 @@ sub finko () {
 sub fin () {
 
     #todo : chemin variable
-    my $workdir = "${currdir}/temp";
+    my $workdir = "${ProgramData}/${Rep_Alim_ou_Testeur}/temp";
     if ( ${OS} =~ m/linux/i ) {
-        $workdir = "${currdir}/temp";
+        $workdir = "${ProgramData}/${Rep_Alim_ou_Testeur}/temp";
         rmtree($workdir);
     }
     else {
@@ -727,12 +790,13 @@ sub faire_pdf() {
     &ajoute_paragraphe("Ce test a été effectué avec l'application Test Compta Démat version $vers_java. La synthèse des résultats ne constitue pas une attestation de conformité, elle ne saurait engager l'administration.",180,50);
     }
     my ( $sec, $min, $hour, $mday, $mon, $year ) = localtime(time);
-    my $nouv_pdf =  '../rapports/rapport_' . basename($file) . "_$hour$min$sec" . '.pdf';
+    my $nouv_pdf =  "${ProgramData}" . '/rapports/rapport_' . basename($file) . "_$hour$min$sec" . '.pdf';
 
     &sauve_pdf($nouv_pdf);
 
     if ( ${OS} =~ m/linux/i ) {
-        system("evince $nouv_pdf");
+#        system("evince $nouv_pdf");
+        system("xdg-open $nouv_pdf 2> /dev/null");
     }
     else {
         system("start $nouv_pdf");

@@ -91,7 +91,6 @@ sub connexion () {
 
 		$host = "localhost";
 	}
-
 	$dbhl->disconnect() if ( defined($dbhl) );
 	$dbhl = DBI->connect( "${dbconnect}:dbname=$dbname;host=$host",
 		$username, $password )
@@ -104,7 +103,7 @@ sub connexion () {
 sub connexion_log () {
 	my ( $dbname, $dbhl, $create ) = @_;
 	$dbhl->disconnect() if ( defined($dbhl) );
-	$dbhl = DBI->connect( "dbi:SQLite:dbname=" . "log/${dbname}.db",
+	$dbhl = DBI->connect( "dbi:SQLite:dbname=" . "${ProgramData}/${Rep_Alim_ou_Testeur}/" . "log/${dbname}.db",
 		"", "", { RaiseError => 1, sqlite_unicode => 1, } )
 	  or die $DBI::errstr;
 
@@ -166,7 +165,7 @@ sub create_log() {
 
 	# log info
 	$dbh = $dbhl;
-	open( FL, "> log/log_" . basename($fic_log) . ".log" )
+	open( FL, "> ${ProgramData}/${Rep_Alim_ou_Testeur}/log/log_" . basename($fic_log) . ".log" )
 	  or ( print STDERR "Impossible de tracer les logs" && return 1 );
 
 	my @dump = &sql_1col(
@@ -180,7 +179,7 @@ where id_trait = $log_seq and type_log='I' and t.id_type=l.texte_log order by 1 
 	close(FL);
 
 	# log E et A
-	open( FL, "> log/err_" . basename($fic_log) . ".log" )
+	open( FL, "> ${ProgramData}/${Rep_Alim_ou_Testeur}/log/err_" . basename($fic_log) . ".log" )
 	  or ( print STDERR "Impossible de tracer les logs" && return 1 );
 
 	@dump = &sql_1col(
@@ -192,7 +191,7 @@ where id_trait = $log_seq and type_log in ('A','E')   and t.id_type=l.texte_log 
 	close(FL);
 	&deconnexion($dbhl);
 	$dbh = $dbh_safe;
-	return "log/err_" . basename($fic_log) . ".log";
+	return "${ProgramData}/${Rep_Alim_ou_Testeur}/log/err_" . basename($fic_log) . ".log";
 
 }
 
@@ -299,7 +298,7 @@ m/^(.+)(\= *[A-Za-z0-9_\-\+\.,]+ *)( )(\=\s*[A-Za-z0-9_\-\+\.,]+ *)$/
 
 		}
 		else {
-			# log fixe
+			# log fixe$
 		}
 		if ( ( $type eq "I" ) && ( $val_1 eq "" ) ) {
 			$log = "[ #1 ]\t" . $log;
@@ -471,14 +470,11 @@ sub modif_acces_direct() {
 sub parse_xml() {
 
 	my ($fic) = @_;
-	$fic = "../client/" . &verif_version_java . "/ressources/" . $fic;
-
+	$fic = "${ProgramData}/client/" . &verif_version_java . "/ressources/" . $fic;
 	if ( !-f "$fic" ) {
 		&trace( "$fic introuvable" );
 		return ( "", "", "" );
-
 	}
-
 	# balise : local ou autre
 	my @elements;
 
@@ -572,7 +568,7 @@ sub verif_ldap () {
 
 sub verif_version_java() {
 	if ( &aorte() eq "t") {
-	    open(CONF, "< Version_Alto2.txt ") or die "Version_Alto2.txt introuvable dans $currdir";
+	    open(CONF, "< ${ProgramData}/${Rep_Alim_ou_Testeur}/Version_Alto2.txt ") or die "Version_Alto2.txt introuvable dans $currdir";
 	    my @temp_version=<CONF>;
 	    close CONF;
 	    
@@ -582,9 +578,9 @@ sub verif_version_java() {
 	
 	my @dossiers;
 	$dossiers[0] = 0;
-	opendir REP, "../client" or ( return 0 );
+	opendir REP, "${ProgramData}/client" or ( return 0 );
 	@dossiers =
-	  sort { sanspoint($b) <=> sanspoint($a) } grep { /^version/ } readdir REP;
+	  sort { sanspoint($b) cmp sanspoint($a) } grep { /^version/ } readdir REP;
 	closedir REP;
 
 	return $dossiers[0];
@@ -593,8 +589,8 @@ sub verif_version_java() {
 
 sub sanspoint() {
 	my ($v) = @_;
-	if ( $v =~ m/(\d*)\.(\d*)\.(\d*)/ ) {
-		$v = sprintf( "%02d%03d%03d", $1, $2, $3 );
+	if ( $v =~ m/(\d*)\.(\d*)\.(\d*)([a-z]?)/ ) {
+		$v = sprintf( "%02d%03d%03d%s", $1, $2, $3, $4 );
 		return $v;
 	}
 }
@@ -644,7 +640,7 @@ sub sql_1col() {
 
 sub  aorte() {
     # a_lim or t_esteur
-    my $sourcefile="alto2_alim.pl";
+    my $sourcefile="alto2_testtype.pl";
     eval "require \"$sourcefile\" ;" ;
     if ($@) {	return "t";    }
     return "a";
