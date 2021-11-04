@@ -580,7 +580,7 @@ sub verif_version_java() {
 	$dossiers[0] = 0;
 	opendir REP, "${ProgramData}/client" or ( return 0 );
 	@dossiers =
-	  sort { sanspoint($b) <=> sanspoint($a) } grep { /^version/ } readdir REP;
+	  sort { sanspoint($b) cmp sanspoint($a) } grep { /^version/ } readdir REP;
 	closedir REP;
 
 	return $dossiers[0];
@@ -589,8 +589,8 @@ sub verif_version_java() {
 
 sub sanspoint() {
 	my ($v) = @_;
-	if ( $v =~ m/(\d*)\.(\d*)\.(\d*)/ ) {
-		$v = sprintf( "%02d%03d%03d", $1, $2, $3 );
+	if ( $v =~ m/(\d*)\.(\d*)\.(\d*)([a-z]?)/ ) {
+		$v = sprintf( "%02d%03d%03d%s", $1, $2, $3, $4 );
 		return $v;
 	}
 }

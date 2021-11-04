@@ -660,6 +660,9 @@ sub controle() {
     open( F, "< ", "$file" );
     binmode F, ":raw" ;
     local $/ = $crlf;
+#   si on veut corriger le bug lié à la presence simultanée des separateurs tabulation et pipe decommenter les lignes 
+#   634 et 650 a 656    
+#    my $pattern = '\|';
     while ( $line = <F> ) {
 # Modif le 10/04/2015 pour remplace les espaces insécables par un espace normal
 	# Les espaces insécables pour les fichiers UTF-8
@@ -674,7 +677,13 @@ sub controle() {
         $line =~ s/ +$//;
         chomp $line;
         $nb_l++;
-
+#        if ($separateur == '\t'){
+#            if ($line=~m/$pattern/){
+#                &erreur( "E","la structure du fichier est incorrecte, une ligne :$nb_l contient le separateur tabulation et le separateur pipe "
+#            );
+#            $nb_errs++;
+#                }
+#            }
         if ( $nb_l == 1 ) { next; }
 
         $percent_sav = int($percent_done);
@@ -1053,6 +1062,8 @@ sub controle() {
 	&faire_pdf();
 	# pour laisser le temps au pdf de s'afficher...
 	sleep(5);
+	#si on veut un affichage avec un contenu dans la fenetre en cas d'erreur decommenter la ligne suivante
+	#&finko("paschargé");
 	&finko;
     } else {
 # Fin ade cette fonction suite à la SPEC 23 le 16/02/2015
