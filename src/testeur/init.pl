@@ -49,8 +49,8 @@ require "$currdir/environnement_alto2.pl";
 our $ProgramFiles = "$ENV{ProgramFiles}";
 our $ProgramData = "$ENV{ProgramData}";
 
-require "alto2_fonctions.pl";
-require "trt_entete.pl";
+require "$currdir/alto2_fonctions.pl";
+require "$currdir/trt_entete.pl";
 
 
 # logs en base pg

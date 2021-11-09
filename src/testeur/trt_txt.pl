@@ -58,7 +58,7 @@ require "$currdir/environnement_alto2.pl";
 our $ProgramFiles = "$ENV{ProgramFiles}";
 our $ProgramData = "$ENV{ProgramData}";
 
-require "alto2_fonctions.pl";
+require "$currdir/alto2_fonctions.pl";
 
 our $Rep_Alim_ou_Testeur = "alimentation";
 our $Aorte = &aorte();
