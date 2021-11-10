@@ -34,7 +34,7 @@
 #                                                                                  /!\ Fichier a enregistrer en utf-8                                                                                       #
 ####################################################################################
 
-# Modules utilisés
+# Modules utilisÃ©s
 use strict;
 use XML::Parser;
 use Getopt::Std;
@@ -53,10 +53,10 @@ require "$currdir/environnement_alto2.pl";
 our $ProgramFiles = "$ENV{ProgramFiles}";
 our $ProgramData = "$ENV{ProgramData}";
 
-# Extraction des paramètres
+# Extraction des paramÃ¨tres
 our %opts;
 
-require "alto2_fonctions.pl";
+require "$currdir/alto2_fonctions.pl";
 
 our $Rep_Alim_ou_Testeur = "alimentation";
 our $Aorte = &aorte();
@@ -80,45 +80,45 @@ $log_seq = $opts{n};
 
 #fin logs
 
-# Vérification des paramètres
+# VÃ©rification des paramÃ¨tres
 &verif_param;
 
 # Initialisation des variables globales et tableaux
-my $ifile  = $opts{f};      # fichier XML à traiter
+my $ifile  = $opts{f};      # fichier XML Ã  traiter
 my $handle = *FICXML;       # handle du fichier XML
-my $debut  = $opts{'t'};    # marqueur de début d'enregistrement
-my $sep    = $opts{s};      # séparateur de champs à utiliser
+my $debut  = $opts{'t'};    # marqueur de dÃ©but d'enregistrement
+my $sep    = $opts{s};      # sÃ©parateur de champs Ã  utiliser
 my $flux
     = $opts{'t'};    # balise d'entete d'un enregistrement pour le fichier xml
 my $flux1     = $opts{'T'};  # balise d'entete du fichier xml
 my $finsstruc = 0;           # fin sous-structure etat-civil (0 =faux, 1=vrai)
 my $new_row = 2;     # nouvel enregistrement (0 =faux, 1=vrai, 2 = init)
 my $tag     = 0;     # nouvelle balise ouvrante (0 =faux, 1=vrai)
-my $elem    = '';    # élément lu en cours
-my $svelem  = '';    # sauvegarde de l'élément en cours
+my $elem    = '';    # Ã©lÃ©ment lu en cours
+my $svelem  = '';    # sauvegarde de l'Ã©lÃ©ment en cours
 my $i       = 0;     # indice des champs dans l'enregistrement complet
 my $j       = 0;     # indice des champs dans l'enregistremnt lu
 my $l       = 0;     # ligne en cours de lecture dans le fichier input
 my $k       = 0;     # gestion des champs absents
 my $p       = '';    # pointeur de l'objet XML en cours de traitement
-my $data    = '';    # données en cours de traitement par le parser
-my $pfx     = '';    # préfixe représentatif des sous-structures xml
+my $data    = '';    # donnÃ©es en cours de traitement par le parser
+my $pfx     = '';    # prÃ©fixe reprÃ©sentatif des sous-structures xml
 my $line    = '';    # ligne du fichier en cours de traitement
 my $ancetre = '';    # debut xml
 my $arbre   = '';    # arbre xml
 my %Hattr   = ();    # table de hash des attributs d'une ligne xml
-my $lock = 0;  # on n'exploite en détail que les enregistrements pas l'entete
+my $lock = 0;  # on n'exploite en dÃ©tail que les enregistrements pas l'entete
 my $bug  = 0;  # pour debuger mettre bug=1 sinon bug=0
 my %Hf1_fmt   = ();           # Table de hash structure xml
-my $rHf1_fmt  = \%Hf1_fmt;    # Référence sur la table de hash structure xml
-my $nbfusions = 0;            # Nb de cas spéciaux fusion
+my $rHf1_fmt  = \%Hf1_fmt;    # RÃ©fÃ©rence sur la table de hash structure xml
+my $nbfusions = 0;            # Nb de cas spÃ©ciaux fusion
 my $nb_fields = keys %Hf1_fmt;    # nombre de champs du tableau
-my $field     = '';               # champ à rechercher dans le tableau
+my $field     = '';               # champ Ã  rechercher dans le tableau
 my $defautlocal
     = '';    # traite le cas d'une balise vide avec seult un attribut xml
 my $pfx_naisdec
     = '';    # prefixe naissance ou deces pour les attributs de balises vides
-my $rHattr_enr = \%Hattr;    # référence sur la hash table
+my $rHattr_enr = \%Hattr;    # rÃ©fÃ©rence sur la hash table
 my @f1_data;
 my @entete;                  # liste des champs "fixes"
 my @plat;                    # tableau du fichier plat
@@ -132,11 +132,11 @@ my $ch_plus_col   = 0;
 our $enc_open = "";     # encodage du fichier de travail
 my $est_utf8 = 0;
 
-# Test si fichier XML compressé
+# Test si fichier XML compressÃ©
 my $FIFO = undef;
 &test_compress;
 
-# Ajout MC le 20/03/2017 On tente de déterminer le type de compta (fichier xsd)
+# Ajout MC le 20/03/2017 On tente de dÃ©terminer le type de compta (fichier xsd)
 #                        pour forcer le nombre de colonnes obligatoires en fonction de ce type de compta.
 my $read_buffer = "";
 open( FT, "+< :raw", $ifile ) or die "impossible";
@@ -163,29 +163,29 @@ my $encodage = ChercheEncodage();
 $bug = 1 if ( defined $opts{'d'} );
 
 # recherche des champs noms dans la liste pour
-# Création d'une instance de parser
-# (demande d'affichage des erreurs avec 2 lignes avant et aprés)
+# CrÃ©ation d'une instance de parser
+# (demande d'affichage des erreurs avec 2 lignes avant et aprÃ©s)
 
 my $parser = new XML::Parser( ErrorContext => 2 );
 
-# Association méthode/fonction
+# Association mÃ©thode/fonction
 $parser->setHandlers(
     Start => \&balise_debut,
     Char  => \&balise_texte,
     End   => \&balise_fin
 );
 
-#RG:T: Parsing du fichier  xml passé en paramètre:E
+#RG:T: Parsing du fichier  xml passÃ© en paramÃ¨tre:E
 $parser->parse($handle);
 
 close FICXML;
 close OFILE;
 
-#RG:T: Ajout des col en plus présente dans le xml -> plat :I
+#RG:T: Ajout des col en plus prÃ©sente dans le xml -> plat :I
 
 move( $opts{o}, $opts{o} . "_wks" );
 
-# ici ok §§§
+# ici ok Â§Â§Â§
 
 open( FIN, "< $enc_open", $opts{o} . "_wks" )
     or die "Impossible de lire le fichier  " . $opts{o} . "_wks";
@@ -250,115 +250,115 @@ close F;
 
 sub alimTables {
 
-# tables au format    cf doc opencalc pour générer les lignes en cas de maj
-# pères_clés_xml:fils;rang_plat;rang_xml;règle_métier_à_appliquer;CHAMPS_BASE_POSTGRES
+# tables au format    cf doc opencalc pour gÃ©nÃ©rer les lignes en cas de maj
+# pÃ¨res_clÃ©s_xml:fils;rang_plat;rang_xml;rÃ¨gle_mÃ©tier_Ã _appliquer;CHAMPS_BASE_POSTGRES
 #  champs 4 et 19 <=>>
 	my @f1_fmt;
     
 	if ( $xsdfile eq "" || $xsdfile =~ /VII-1/i || $xsdfile =~ /VIII-3/i ) {
 		@f1_fmt = qw(
-			journal§JournalCode;1;1;;code_jrnal
-			journal§JournalLib;2;2;;lib_jrnal
-			journal_ecriture§EcritureNum;3;3;;num_ecr
-			journal_ecriture§EcritureDate;4;4;DS;date_cpt
-			journal_ecriture_ligne§CompteNum;5;5;NC;num_cpte_gen
-			journal_ecriture_ligne§CompteLib;6;6;;lib_cpte_gen
-			journal_ecriture_ligne§CompteAuxNum;7;7;;num_cpt_aux
-			journal_ecriture_ligne§CompteAuxLib;8;8;;lib_cpt_aux
-			journal_ecriture_ligne§Debit;9;9;NU;mtn_debit
-			journal_ecriture_ligne§Credit;10;10;NU;mtn_credit
-			journal_ecriture§EcritureLib;11;11;;lib_ecriture
-			journal_ecriture§PieceRef;12;12;;num_piece
-			journal_ecriture§PieceDate;13;13;DS;date_piece
-			journal_ecriture§EcritureLet;14;14;;code_lettrage
-			journal_ecriture§DateLet;15;15;DS;date_lettrage
-			journal_ecriture§ValidDate;16;16;DS;valid_date
-			journal_ecriture_ligne§Montantdevise;17;17;NU;mtn_devise
-			journal_ecriture_ligne§Idevise;18;18;;idevise
-			journal_ecriture_ligne§Montant;0;19;NU;mtn_debit
-			journal_ecriture_ligne§Sens;0;20;;mtn_credit
+			journalÂ§JournalCode;1;1;;code_jrnal
+			journalÂ§JournalLib;2;2;;lib_jrnal
+			journal_ecritureÂ§EcritureNum;3;3;;num_ecr
+			journal_ecritureÂ§EcritureDate;4;4;DS;date_cpt
+			journal_ecriture_ligneÂ§CompteNum;5;5;NC;num_cpte_gen
+			journal_ecriture_ligneÂ§CompteLib;6;6;;lib_cpte_gen
+			journal_ecriture_ligneÂ§CompteAuxNum;7;7;;num_cpt_aux
+			journal_ecriture_ligneÂ§CompteAuxLib;8;8;;lib_cpt_aux
+			journal_ecriture_ligneÂ§Debit;9;9;NU;mtn_debit
+			journal_ecriture_ligneÂ§Credit;10;10;NU;mtn_credit
+			journal_ecritureÂ§EcritureLib;11;11;;lib_ecriture
+			journal_ecritureÂ§PieceRef;12;12;;num_piece
+			journal_ecritureÂ§PieceDate;13;13;DS;date_piece
+			journal_ecritureÂ§EcritureLet;14;14;;code_lettrage
+			journal_ecritureÂ§DateLet;15;15;DS;date_lettrage
+			journal_ecritureÂ§ValidDate;16;16;DS;valid_date
+			journal_ecriture_ligneÂ§Montantdevise;17;17;NU;mtn_devise
+			journal_ecriture_ligneÂ§Idevise;18;18;;idevise
+			journal_ecriture_ligneÂ§Montant;0;19;NU;mtn_debit
+			journal_ecriture_ligneÂ§Sens;0;20;;mtn_credit
 		);
 		$pos_montant = 19;
 		$pos_sens = 20;
 	} else {
 		if ( $xsdfile eq "" or $xsdfile =~ /VIII-5/i ) {
 			@f1_fmt = qw(
-				journal§JournalCode;1;1;;code_jrnal
-				journal§JournalLib;2;2;;lib_jrnal
-				journal_ecriture§EcritureNum;3;3;;num_ecr
-				journal_ecriture§EcritureDate;4;4;DS;date_cpt
-				journal_ecriture_ligne§CompteNum;5;5;NC;num_cpte_gen
-				journal_ecriture_ligne§CompteLib;6;6;;lib_cpte_gen
-				journal_ecriture_ligne§CompteAuxNum;7;7;;num_cpt_aux
-				journal_ecriture_ligne§CompteAuxLib;8;8;;lib_cpt_aux
-				journal_ecriture_ligne§Debit;9;9;NU;mtn_debit
-				journal_ecriture_ligne§Credit;10;10;NU;mtn_credit
-				journal_ecriture§EcritureLib;11;11;;lib_ecriture
-				journal_ecriture§PieceRef;12;12;;num_piece
-				journal_ecriture§PieceDate;13;13;DS;date_piece
-				journal_ecriture§EcritureLet;14;14;;code_lettrage
-				journal_ecriture§DateLet;15;15;DS;date_lettrage
-				journal_ecriture§ValidDate;16;16;DS;valid_date
-				journal_ecriture_ligne§Montantdevise;17;17;NU;mtn_devise
-				journal_ecriture_ligne§Idevise;18;18;;idevise
-				journal_ecriture§DateRglt;19;19;DS;paiement_date
-				journal_ecriture§ModeRglt;20;20;DS;paiement_mode
-				journal_ecriture§NatOp;21;21;;prestation
-				journal_ecriture_ligne§Montant;0;22;NU;mtn_debit
-				journal_ecriture_ligne§Sens;0;23;;mtn_credit
+				journalÂ§JournalCode;1;1;;code_jrnal
+				journalÂ§JournalLib;2;2;;lib_jrnal
+				journal_ecritureÂ§EcritureNum;3;3;;num_ecr
+				journal_ecritureÂ§EcritureDate;4;4;DS;date_cpt
+				journal_ecriture_ligneÂ§CompteNum;5;5;NC;num_cpte_gen
+				journal_ecriture_ligneÂ§CompteLib;6;6;;lib_cpte_gen
+				journal_ecriture_ligneÂ§CompteAuxNum;7;7;;num_cpt_aux
+				journal_ecriture_ligneÂ§CompteAuxLib;8;8;;lib_cpt_aux
+				journal_ecriture_ligneÂ§Debit;9;9;NU;mtn_debit
+				journal_ecriture_ligneÂ§Credit;10;10;NU;mtn_credit
+				journal_ecritureÂ§EcritureLib;11;11;;lib_ecriture
+				journal_ecritureÂ§PieceRef;12;12;;num_piece
+				journal_ecritureÂ§PieceDate;13;13;DS;date_piece
+				journal_ecritureÂ§EcritureLet;14;14;;code_lettrage
+				journal_ecritureÂ§DateLet;15;15;DS;date_lettrage
+				journal_ecritureÂ§ValidDate;16;16;DS;valid_date
+				journal_ecriture_ligneÂ§Montantdevise;17;17;NU;mtn_devise
+				journal_ecriture_ligneÂ§Idevise;18;18;;idevise
+				journal_ecritureÂ§DateRglt;19;19;DS;paiement_date
+				journal_ecritureÂ§ModeRglt;20;20;DS;paiement_mode
+				journal_ecritureÂ§NatOp;21;21;;prestation
+				journal_ecriture_ligneÂ§Montant;0;22;NU;mtn_debit
+				journal_ecriture_ligneÂ§Sens;0;23;;mtn_credit
 			);
 			$pos_montant = 22;
 			$pos_sens = 23;
 		} else {
 			if ( $xsdfile eq "" or $xsdfile =~ /VIII-7/i ) {
 				@f1_fmt = qw(
-					journal§JournalCode;1;1;;code_jrnal
-					journal§JournalLib;2;2;;lib_jrnal
-					journal_ecriture§EcritureNum;3;3;;num_ecr
-					journal_ecriture§EcritureDate;4;4;DS;date_cpt
-					journal_ecriture_ligne§CompteNum;5;5;NC;num_cpte_gen
-					journal_ecriture_ligne§CompteLib;6;6;;lib_cpte_gen
-					journal_ecriture_ligne§CompteAuxNum;7;7;;num_cpt_aux
-					journal_ecriture_ligne§CompteAuxLib;8;8;;lib_cpt_aux
-					journal_ecriture_ligne§Debit;9;9;NU;mtn_debit
-					journal_ecriture_ligne§Credit;10;10;NU;mtn_credit
-					journal_ecriture§EcritureLib;11;11;;lib_ecriture
-					journal_ecriture§PieceRef;12;12;;num_piece
-					journal_ecriture§PieceDate;13;13;DS;date_piece
-					journal_ecriture§EcritureLet;14;14;;code_lettrage
-					journal_ecriture§DateLet;15;15;DS;date_lettrage
-					journal_ecriture§ValidDate;16;16;DS;valid_date
-					journal_ecriture_ligne§Montantdevise;17;17;NU;mtn_devise
-					journal_ecriture_ligne§Idevise;18;18;;idevise
-					journal_ecriture§DateRglt;19;19;DS;paiement_date
-					journal_ecriture§ModeRglt;20;20;DS;paiement_mode
-					journal_ecriture§NatOp;21;21;;prestation
-					journal_ecriture§IdClient;22;22;;client
-					journal_ecriture_ligne§Montant;0;23;NU;mtn_debit
-					journal_ecriture_ligne§Sens;0;24;;mtn_credit
+					journalÂ§JournalCode;1;1;;code_jrnal
+					journalÂ§JournalLib;2;2;;lib_jrnal
+					journal_ecritureÂ§EcritureNum;3;3;;num_ecr
+					journal_ecritureÂ§EcritureDate;4;4;DS;date_cpt
+					journal_ecriture_ligneÂ§CompteNum;5;5;NC;num_cpte_gen
+					journal_ecriture_ligneÂ§CompteLib;6;6;;lib_cpte_gen
+					journal_ecriture_ligneÂ§CompteAuxNum;7;7;;num_cpt_aux
+					journal_ecriture_ligneÂ§CompteAuxLib;8;8;;lib_cpt_aux
+					journal_ecriture_ligneÂ§Debit;9;9;NU;mtn_debit
+					journal_ecriture_ligneÂ§Credit;10;10;NU;mtn_credit
+					journal_ecritureÂ§EcritureLib;11;11;;lib_ecriture
+					journal_ecritureÂ§PieceRef;12;12;;num_piece
+					journal_ecritureÂ§PieceDate;13;13;DS;date_piece
+					journal_ecritureÂ§EcritureLet;14;14;;code_lettrage
+					journal_ecritureÂ§DateLet;15;15;DS;date_lettrage
+					journal_ecritureÂ§ValidDate;16;16;DS;valid_date
+					journal_ecriture_ligneÂ§Montantdevise;17;17;NU;mtn_devise
+					journal_ecriture_ligneÂ§Idevise;18;18;;idevise
+					journal_ecritureÂ§DateRglt;19;19;DS;paiement_date
+					journal_ecritureÂ§ModeRglt;20;20;DS;paiement_mode
+					journal_ecritureÂ§NatOp;21;21;;prestation
+					journal_ecritureÂ§IdClient;22;22;;client
+					journal_ecriture_ligneÂ§Montant;0;23;NU;mtn_debit
+					journal_ecriture_ligneÂ§Sens;0;24;;mtn_credit
 				);
-#					journal_ecriture§Resultat;23;23;;ecr_type
+#					journal_ecritureÂ§Resultat;23;23;;ecr_type
 				$pos_montant = 23;
 				$pos_sens = 24;
 			}
 		}
 	}
 	
-# Ajout MC le 27/05/2015 DATERGLT, NATOP et IDCLIENT car sont détectés comme champs supplémentaires.
-#        journal_ecriture_ligne§Idevise;19;19;;idevise
-#        journal_ecriture_ligne§Montant;0;20;NU;mtn_debit
-#        journal_ecriture_ligne§Sens;0;21;;mtn_credit
+# Ajout MC le 27/05/2015 DATERGLT, NATOP et IDCLIENT car sont dÃ©tectÃ©s comme champs supplÃ©mentaires.
+#        journal_ecriture_ligneÂ§Idevise;19;19;;idevise
+#        journal_ecriture_ligneÂ§Montant;0;20;NU;mtn_debit
+#        journal_ecriture_ligneÂ§Sens;0;21;;mtn_credit
 
-#         journal_ecriture§DateRglt;20;20;DS;paiement_date
-#         journal_ecriture§NatOp;21;21;;prestation
-#         journal_ecriture§IdClient;22;22;;client
-#         journal_ecriture_ligne§Montant;0;23;NU;mtn_debit
-#         journal_ecriture_ligne§Sens;0;24;;mtn_credit
+#         journal_ecritureÂ§DateRglt;20;20;DS;paiement_date
+#         journal_ecritureÂ§NatOp;21;21;;prestation
+#         journal_ecritureÂ§IdClient;22;22;;client
+#         journal_ecriture_ligneÂ§Montant;0;23;NU;mtn_debit
+#         journal_ecriture_ligneÂ§Sens;0;24;;mtn_credit
         
 
 	foreach my $i (@f1_fmt) {
 		my @liste1 = split /;/, uc($i);
-		my ( $i_1, $i_2 ) = split /§/, $liste1[0];
+		my ( $i_1, $i_2 ) = split /Â§/, $liste1[0];
 		$Hf1_fmt{ $liste1[2] }{'chemin'} = $i_1;
 		$Hf1_fmt{ $liste1[2] }{'noeud'}  = $i_2;
 		$Hf1_fmt{ $liste1[2] }{'plat'}   = $liste1[1];
@@ -397,11 +397,11 @@ sub constructionPlat {
     my @txt;           # tableau des champs du fichier txt
     my $v;             # ligne
                        # if ( !defined( $entete[3] ) ) {        return;     }
-    # 20141009 : forcer le nb éléments du fichier à produire au max des colonnes (cf alimenTables() )
-    # 14/11/2016 Modif MC force le nombre de champs à 23 au lieu de 22 
+    # 20141009 : forcer le nb Ã©lÃ©ments du fichier Ã  produire au max des colonnes (cf alimenTables() )
+    # 14/11/2016 Modif MC force le nombre de champs Ã  23 au lieu de 22 
     #$txt[22]='';
     #$txt[23]='';
-    # 14/11/2016 Fin Modif MC force le nombre de champs à 23 au lieu de 22 
+    # 14/11/2016 Fin Modif MC force le nombre de champs Ã  23 au lieu de 22 
     $txt[18]='';
     
     &trace("contenu tableau xml :");
@@ -432,7 +432,7 @@ sub constructionPlat {
         }
     }
 
-  #RG:F: retraitement debit / credit par ligne en présence de Montant/sens :I
+  #RG:F: retraitement debit / credit par ligne en prÃ©sence de Montant/sens :I
   #RG:F: retraitement debit / credit par ligne, sens hors plage D C +1 -1 :E
     if ( defined $plat[$pos_sens] && defined $plat[$pos_montant] ) {
         &trace( "Montant : " . $plat[$pos_montant] . " SENS :" . $plat[$pos_sens] );
@@ -470,8 +470,8 @@ sub constructionPlat {
 #                     . uc( $plat[21] ) );
 #             exit 1;
 #         }
-    # correction bug 20141009 : après utilisation des champs 20 21 du xml
-    # il faut les purger pour réduire la liste @plat à 19
+    # correction bug 20141009 : aprÃ¨s utilisation des champs 20 21 du xml
+    # il faut les purger pour rÃ©duire la liste @plat Ã  19
     
     unshift @plat;
     unshift @plat;
@@ -488,7 +488,7 @@ sub constructionPlat {
 
     for ( $indice_xml = 1; $indice_xml <= $#plat; $indice_xml++ ) {
 
-#RG:T:Remise à vide du contenu des balises à chaque fin de ligne d'écriture:I
+#RG:T:Remise Ã  vide du contenu des balises Ã  chaque fin de ligne d'Ã©criture:I
         $plat[$indice_xml] = undef
             if ( $Hf1_fmt{$indice_xml}{'chemin'} =~ /_ligne$/i );
     }
@@ -507,7 +507,7 @@ sub balise_debut {
 
 # on exploite ici l'architecture des balises xml pas leur contenu
 # sauf les attributs qui font parti de la balise :
-# cas spécifique une balise avec un attribut mais pas de données est ignoré de base ...
+# cas spÃ©cifique une balise avec un attribut mais pas de donnÃ©es est ignorÃ© de base ...
 
     ( $p, $data, %attr ) = @_;
     &trace( "debut : " . $data );
@@ -613,7 +613,7 @@ sub balise_texte {
 sub balise_fin {
     ( $p, $data ) = @_;
 
-    # code spécifique selon le type de balise de fin d'enregistrements
+    # code spÃ©cifique selon le type de balise de fin d'enregistrements
     #utf8::decode($data); incompatible hp-ux
     if ( $data =~ /^ligne$/i ) {
         &constructionPlat;
@@ -638,11 +638,11 @@ sub reglesMetier {
     }
     my $heure;
 
-#RG:F:Date Souple format accepté AAAA-MM-JJ ou AAAA-MM-JJThh;mm;ss  :I
-#RG:F:Date Souple format accepté AAAA-MM-JJ ou AAAA-MM-JJThh;mm;ss  :I
-#RG:F:Montant  sous la forme +- en debut ou en fin accepté:I
-#RG:F:Montant  sous la forme numérique avec séparateur . uniquement accepté:I
-#RG:F:Numéro de compte sous la forme numérique sur 3 positions, suivi alphanumerique:I
+#RG:F:Date Souple format acceptÃ© AAAA-MM-JJ ou AAAA-MM-JJThh;mm;ss  :I
+#RG:F:Date Souple format acceptÃ© AAAA-MM-JJ ou AAAA-MM-JJThh;mm;ss  :I
+#RG:F:Montant  sous la forme +- en debut ou en fin acceptÃ©:I
+#RG:F:Montant  sous la forme numÃ©rique avec sÃ©parateur . uniquement acceptÃ©:I
+#RG:F:NumÃ©ro de compte sous la forme numÃ©rique sur 3 positions, suivi alphanumerique:I
 
     if ( $metier eq 'DS' ) {
         if (( $valeurEntree !~ m/^\s*[0-9]{4}-[0-9]{2}-[0-9]{2}\s*$/ )

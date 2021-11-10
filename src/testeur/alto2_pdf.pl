@@ -29,7 +29,8 @@
 #knowledge of the CeCILL license and that you accept its terms.
 #
 #!/usr/bin/perl
-require "alto2_fonctions.pl";
+my $currdir   = dirname( abs_path($0) );
+require "$currdir/alto2_fonctions.pl";
 use PDF::API2;
 use PDF::Table;
 use constant mm => 25.4 / 72;

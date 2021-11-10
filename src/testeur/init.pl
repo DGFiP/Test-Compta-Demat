@@ -92,9 +92,9 @@ if ( $Aorte eq "t" ) {
     $Rep_Alim_ou_Testeur = "testeur";
 }
 #my $workdir   = $currdir . "/temp/";
-my $workdir   = $ProgramData . "/${Rep_Alim_ou_Testeur}/temp/";
+my $workdir   = "${ProgramData}" . "/${Rep_Alim_ou_Testeur}/temp/";
 #my $err_init  = "log/err_" . basename( $0, qw(.exe) ) . "_.log";
-my $err_init  = $ProgramData . "/${Rep_Alim_ou_Testeur}/log/err_" . basename( $0, qw(.exe) ) . "_.log";
+my $err_init  = "${ProgramData}" . "/${Rep_Alim_ou_Testeur}/log/err_" . basename( $0, qw(.exe) ) . "_.log";
 our $conn_local   = "";
 our $conn_distant = "";
 our $ldap_distant = "";
@@ -575,22 +575,18 @@ sub traitement() {
 		$file =~ s/[\.xml]*$/.dat/i;
 
 		$rc = system(
-	"${pref_chem}trt_xml$exe_ou_pl   -o \"$file\"  -f  \"$xml_file\"  -T EXERCICE  -t JOURNAL  -n $log_seq -e \"$line\" 2>${err_file}_xml"
+	        "${pref_chem}trt_xml$exe_ou_pl   -o \"$file\"  -f  \"$xml_file\"  -T EXERCICE  -t JOURNAL  -n $log_seq -e \"$line\" 2>${err_file}_xml"
 		);    # ajouter -d  pour activer les traces sur xml
 		if ( $rc > 0 ) { &finko("${err_file}_xml"); }
-
-		system(
-	"${pref_chem}trt_txt$exe_ou_pl \"$file\" P $siren $alpage $datecloture $err_file $pcg  $bic  \"$nom_societe\" \"$ctl\"  $log_seq  \"$conn_base\" \"$id\" "
-		);    #>$log_file 2>$err_file ");
-	}         # fin traitement xml_file
+    }         # fin traitement xml_file
         else {    # traitement plat
              #RG:T:recherche du séparateur dans le fichier  tab ou | traitement spécifique:I
              # détection type fichier
 	     #RG:F:fiche 16 : à compter 1/1/2013 vir et pvi interdits
             my @comp_tab = split /\t/, $line;
             my @comp_pip = split /\|/, $line;
-            my @comp_pvi = split /;/,  $line;
-            my @comp_vir = split /,/,  $line;
+            my @comp_pvi = split /\;/,  $line;
+            my @comp_vir = split /\,/,  $line;
             if    ( $#comp_tab >= 8 ) { $sep = "T"; }
             elsif ( $#comp_pip >= 8 ) { $sep = "P"; }
             elsif ( ( not &arrete2013($datecloture) ) and $#comp_vir >= 8 ) {
@@ -616,11 +612,11 @@ sub traitement() {
                 #&finko("${err_file}_entete");
             }
             $rc = system(
-"${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture $err_file  $pcg $bic  \"$nom_societe\" \"$ctl\" $log_seq  \"$conn_base\" \"$id\" "
+"${pref_chem}trt_txt$exe_ou_pl \"$file\" $sep $siren $alpage $datecloture \"$err_file\" $pcg  $bic  \"$nom_societe\" \"$ctl\"  $log_seq  \"$conn_base\" \"$id\" "
             );    #>$log_file 2>$err_file ");
             if ( $rc > 0 ) {
                 print STDERR
-"${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture $err_file  $pcg $bic  \"$nom_societe\" \"$ctl\" $log_seq   \"$conn_base\" \"$id\" "
+"${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture \"$err_file\" $pcg  $bic  \"$nom_societe\" \"$ctl\"  $log_seq  \"$conn_base\" \"$id\" "
                   ;    # &finko("${err_file}";
                 exit 1;
             }
@@ -743,7 +739,7 @@ values ('$alpage','$file','$datecloture',0);";
 
 sub faire_pdf() {
     my ($texte_erreur) = @_;
-    require "alto2_pdf.pl";
+    require "$currdir/alto2_pdf.pl";
 
     use utf8;
     my $text_to_place ;

@@ -1167,7 +1167,7 @@ sub finko () {
 
 sub faire_pdf() {
 
-    require "alto2_pdf.pl";
+    require "$currdir/alto2_pdf.pl";
 
     use utf8;
     my $text_to_place ;
