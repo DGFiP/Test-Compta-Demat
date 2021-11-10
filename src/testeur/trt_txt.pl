@@ -1445,11 +1445,13 @@ sub faire_pdf() {
 # Fin ajout SPECs 22 11/01/2015
 
     my ( $sec, $min, $hour, $mday, $mon, $year ) = localtime(time);
-    my $nouv_pdf = "${ProgramData}" . '/rapports/rapport_' . basename($file) . "_$hour$min$sec" . '.pdf';
-      
-# Modif du 10/04/2015 pour supprimer les espaces dans le nom du rapport à créer
-    $nouv_pdf =~ s/ {1,}//g;
-    
+
+    # Modif du 10/04/2015 pour supprimer les espaces dans le nom du rapport à créer
+    # Mise à jour du 10/11/2021 pour ne pas supprimer les espaces du chemin
+    my $newfilename = basename($file);
+    $newfilename =~ s/ {1,}//g;
+
+    my $nouv_pdf = "${ProgramData}" . '/rapports/rapport_' . "$newfilename" . "_$hour$min$sec" . '.pdf';
     
     &sauve_pdf($nouv_pdf);
 
@@ -1457,10 +1459,14 @@ sub faire_pdf() {
 
     if ( ${OS} =~ m/linux/i ) {
 #        system("evince $nouv_pdf");
-	system("xdg-open $nouv_pdf 2> /dev/null");
+	system("xdg-open '$nouv_pdf' 2> /dev/null ||
+            gnome-open '$nouv_pdf' 2> /dev/null ||
+            evince '$nouv_pdf' 2> /dev/null ||
+            explorer.exe \"\$(wslpath -w '$nouv_pdf')\" 2> /dev/null
+            ");
     }
     else {
-        system("start $nouv_pdf");
+        system("start '$nouv_pdf'");
     }
 
 # Ajour de cette fonction suite à la SPEC 23 le 16/02/2015
