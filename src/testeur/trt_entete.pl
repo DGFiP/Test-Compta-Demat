@@ -50,10 +50,10 @@ sub sub_entete() {
     our $dbh;
     our $log_seq = 0;
     $dbhlog = &connexion_log( "altoweb2", $dbh );
-
+our $log_seq = 0;
     # Vérification des paramètres
     &verif_param;
-
+	
     my $file  = $opts{f};
     my $ofile = $opts{o};
     my $sep   = $opts{s};
@@ -69,7 +69,7 @@ sub sub_entete() {
     my $crlf = &detecte_macfile($hf);
     
     close $hf;
-    
+   
     open( F, "$file" )
         or ( $errmsg = "Impossible de trouver $file" && return 1 );
 #        or ( &erreur( "E", "Impossible de trouver $file" ) && return 1 );

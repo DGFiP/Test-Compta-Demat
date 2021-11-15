@@ -640,7 +640,7 @@ sub sql_1col() {
 
 sub  aorte() {
     # a_lim or t_esteur
-    my $sourcefile="alto2_testtype.pl";
+    my $sourcefile=".\alto2_testtype.pl";
     eval "require \"$sourcefile\" ;" ;
     if ($@) {	return "t";    }
     return "a";
