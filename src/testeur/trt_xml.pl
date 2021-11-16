@@ -56,7 +56,13 @@ our $ProgramData = "$ENV{ProgramData}";
 # Extraction des paramètres
 our %opts;
 
-require "alto2_fonctions.pl";
+require "$currdir/alto2_fonctions.pl";
+
+our $Rep_Alim_ou_Testeur = "alimentation";
+our $Aorte = &aorte();
+if ( $Aorte eq "t" ) {
+    $Rep_Alim_ou_Testeur = "testeur";
+}
 
 our $Rep_Alim_ou_Testeur = "alimentation";
 our $Aorte = &aorte();
