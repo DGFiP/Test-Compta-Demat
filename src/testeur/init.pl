@@ -430,7 +430,8 @@ sub traitement() {
 
         my $pref_chem = "";
         if ( ${OS} =~ m/linux/i ) {
-		$pref_chem = "./";
+		#$pref_chem = "./";
+		$pref_chem = "$currdir/";
 	}
 	
         while ( $line = <F> ) { last; }
@@ -619,7 +620,7 @@ sub traitement() {
 "${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture \"$err_file\" $pcg  $bic  \"$nom_societe\" \"$ctl\"  $log_seq  \"$conn_base\" \"$id\" "
                   ;    # &finko("${err_file}";
                 exit 1;
-            }
+            } 
         }    # fin traitement plat
     }    # fin foreach
     &fin();
