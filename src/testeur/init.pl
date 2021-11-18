@@ -581,11 +581,13 @@ sub traitement() {
 		$rc = system(
 	"${pref_chem}trt_xml$exe_ou_pl   -o \"$file\"  -f  \"$xml_file\"  -T EXERCICE  -t JOURNAL  -n $log_seq -e \"$line\" 2>${err_file}_xml"
 		);    # ajouter -d  pour activer les traces sur xml
-		if ( $rc > 0 ) { &finko("${err_file}_xml"); }
-
-		system(
-	"${pref_chem}trt_txt$exe_ou_pl \"$file\" P $siren $alpage $datecloture $err_file $pcg  $bic  \"$nom_societe\" \"$ctl\"  $log_seq  \"$conn_base\" \"$id\" "
-		);    #>$log_file 2>$err_file ");
+        if ( $rc > 0 ) {
+            print STDERR
+	        "\"${pref_chem}trt_xml$exe_ou_pl\" -o \"$file\" -f \"$xml_file\" -T EXERCICE -t JOURNAL -n $log_seq -e \"$line\" 2> \"${err_file}_xml\""
+            ;
+            &finko("${err_file}_xml");
+            exit 1;
+        }  #>$log_file 2>$err_file ");
 	}         # fin traitement xml_file
         else {    # traitement plat
              #RG:T:recherche du séparateur dans le fichier  tab ou | traitement spécifique:I
