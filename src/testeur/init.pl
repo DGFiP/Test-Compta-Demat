@@ -732,10 +732,11 @@ sub init_dossier() {
   db_cree boolean
 )"
     ) or &trace( $DBI::errstr, 'finko' );
-
-    $REQ =
+    my $SqlStringFilename = $file;
+    $SqlStringFilename =~ s/'/''/g;
+    $REQ = 
 "INSERT into suivi_alim ( num_alpage ,  nom_fichier,  date_cloture ,    db_cree )
-values ('$alpage','$file','$datecloture',0);";
+values ('$alpage', '$SqlStringFilename','$datecloture',0);";
     $dbhlog->do($REQ)
       or &trace( " Insert en table de suivi impossible", 'finko' );
     $log_seq = &recup_noseq;
