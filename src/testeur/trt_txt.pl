@@ -1447,11 +1447,13 @@ sub faire_pdf() {
 # Fin ajout SPECs 22 11/01/2015
 
     my ( $sec, $min, $hour, $mday, $mon, $year ) = localtime(time);
-    my $nouv_pdf = "${ProgramData}" . '/rapports/rapport_' . basename($file) . "_$hour$min$sec" . '.pdf';
-      
+
 # Modif du 10/04/2015 pour supprimer les espaces dans le nom du rapport à créer
-    $nouv_pdf =~ s/ {1,}//g;
-    
+    # Mise à jour du 18/11/2021 pour ne pas supprimer les espaces du chemin
+    my $newfilename = basename($file);
+    $newfilename =~ s/ {1,}//g;
+
+    my $nouv_pdf = "${ProgramData}" . '/rapports/rapport_' . "$newfilename" . "_$hour$min$sec" . '.pdf';
     
     &sauve_pdf($nouv_pdf);
 

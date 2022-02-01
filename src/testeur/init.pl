@@ -95,9 +95,9 @@ if ( $Aorte eq "t" ) {
     $Rep_Alim_ou_Testeur = "testeur";
 }
 #my $workdir   = $currdir . "/temp/";
-my $workdir   = $ProgramData . "/${Rep_Alim_ou_Testeur}/temp/";
+my $workdir   = "${ProgramData}" . "/${Rep_Alim_ou_Testeur}/temp/";
 #my $err_init  = "log/err_" . basename( $0, qw(.exe) ) . "_.log";
-my $err_init  = $ProgramData . "/${Rep_Alim_ou_Testeur}/log/err_" . basename( $0, qw(.exe) ) . "_.log";
+my $err_init  = "${ProgramData}" . "/${Rep_Alim_ou_Testeur}/log/err_" . basename( $0, qw(.exe) ) . "_.log";
 our $conn_local   = "";
 our $conn_distant = "";
 our $ldap_distant = "";
@@ -579,12 +579,12 @@ sub traitement() {
 		$file =~ s/[\.xml]*$/.dat/i;
 
 		$rc = system(
-	"${pref_chem}trt_xml$exe_ou_pl   -o \"$file\"  -f  \"$xml_file\"  -T EXERCICE  -t JOURNAL  -n $log_seq -e \"$line\" 2> \"${err_file}_xml\""
+	"\"${pref_chem}trt_xml$exe_ou_pl\" -o \"$file\" -f \"$xml_file\" -T EXERCICE -t JOURNAL -n $log_seq -e \"$line\" 2> \"${err_file}_xml\""
 		);    # ajouter -d  pour activer les traces sur xml
 		if ( $rc > 0 ) { &finko("${err_file}_xml"); }
 
 		system(
-	"${pref_chem}trt_txt$exe_ou_pl \"$file\" P $siren $alpage $datecloture \"${err_file}\" $pcg $bic \"$nom_societe\" \"$ctl\" $log_seq \"$conn_base\" \"$id\""
+	"\"${pref_chem}trt_txt$exe_ou_pl\" \"$file\" P $siren $alpage $datecloture \"${err_file}\" $pcg $bic \"$nom_societe\" \"$ctl\" $log_seq \"$conn_base\" \"$id\""
 		);    #>$log_file 2>$err_file ");
 	}         # fin traitement xml_file
         else {    # traitement plat
@@ -620,11 +620,11 @@ sub traitement() {
                 #&finko("${err_file}_entete");
             }
             $rc = system(
-"${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture \"${err_file}\" $pcg $bic \"$nom_societe\" \"$ctl\" $log_seq \"$conn_base\" \"$id\""
+"\"${pref_chem}trt_txt$exe_ou_pl\"  \"$file\" $sep $siren $alpage $datecloture \"${err_file}\" $pcg $bic \"$nom_societe\" \"$ctl\" $log_seq \"$conn_base\" \"$id\""
             );    #>$log_file 2>$err_file ");
             if ( $rc > 0 ) {
                 print STDERR
-"${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture \"${err_file}\" $pcg $bic \"$nom_societe\" \"$ctl\" $log_seq \"$conn_base\" \"$id\""
+"\"${pref_chem}trt_txt$exe_ou_pl\"  \"$file\" $sep $siren $alpage $datecloture \"${err_file}\" $pcg $bic \"$nom_societe\" \"$ctl\" $log_seq \"$conn_base\" \"$id\""
                   ;    # &finko("${err_file}";
                 exit 1;
             } 
@@ -795,7 +795,11 @@ sub faire_pdf() {
     &ajoute_paragraphe("Ce test a été effectué avec l'application Test Compta Démat version $vers_java. La synthèse des résultats ne constitue pas une attestation de conformité, elle ne saurait engager l'administration.",180,50);
     }
     my ( $sec, $min, $hour, $mday, $mon, $year ) = localtime(time);
-    my $nouv_pdf =  "${ProgramData}" . '/rapports/rapport_' . basename($file) . "_$hour$min$sec" . '.pdf';
+    # Mise à jour du 18/11/2021 pour ne pas supprimer les espaces du chemin
+    my $newfilename = basename($file);
+    $newfilename =~ s/ {1,}//g;
+
+    my $nouv_pdf = "${ProgramData}" . '/rapports/rapport_' . "$newfilename" . "_$hour$min$sec" . '.pdf';
 
     &sauve_pdf($nouv_pdf);
 
