@@ -11,7 +11,7 @@ SCRIPT_PATH=$(pwd -P)
 SCRIPT_NAME=$(basename ${GARBAGE_SCRIPT_PATH})
 cd ..
 
-SOURCE_DIR=$(pwd -P | sed 's/[]['\''!"#$%& ()*,:;<=>?`{|}~]/\\&/gm') # Escaping characters
+SOURCE_DIR=$(pwd -P | sed 's/[^a-zA-Z0-9,._+@%/-]/\\&/gm') # Escaping characters
 
 cd "${SCRIPT_PATH}"
 
