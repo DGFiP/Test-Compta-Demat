@@ -579,7 +579,7 @@ sub traitement() {
 		$file =~ s/[\.xml]*$/.dat/i;
 
 		$rc = system(
-	"${pref_chem}trt_xml$exe_ou_pl   -o \"$file\"  -f  \"$xml_file\"  -T EXERCICE  -t JOURNAL  -n $log_seq -e \"$line\" 2>${err_file}_xml"
+	"${pref_chem}trt_xml$exe_ou_pl   -o \"$file\"  -f  \"$xml_file\"  -T EXERCICE  -t JOURNAL  -n $log_seq -e \"$line\" 2> \"${err_file}_xml\""
 		);    # ajouter -d  pour activer les traces sur xml
         if ( $rc > 0 ) {
             print STDERR
@@ -622,11 +622,11 @@ sub traitement() {
                 #&finko("${err_file}_entete");
             }
             $rc = system(
-"${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture $err_file  $pcg $bic  \"$nom_societe\" \"$ctl\" $log_seq  \"$conn_base\" \"$id\" "
+"${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture \"${err_file}\" $pcg $bic \"$nom_societe\" \"$ctl\" $log_seq \"$conn_base\" \"$id\""
             );    #>$log_file 2>$err_file ");
             if ( $rc > 0 ) {
                 print STDERR
-"${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture $err_file  $pcg $bic  \"$nom_societe\" \"$ctl\" $log_seq   \"$conn_base\" \"$id\" "
+"${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture \"${err_file}\" $pcg $bic \"$nom_societe\" \"$ctl\" $log_seq \"$conn_base\" \"$id\""
                   ;    # &finko("${err_file}";
                 exit 1;
             } 
@@ -734,10 +734,11 @@ sub init_dossier() {
   db_cree boolean
 )"
     ) or &trace( $DBI::errstr, 'finko' );
-
-    $REQ =
+    my $SqlStringFilename = $file;
+    $SqlStringFilename =~ s/'/''/g;
+    $REQ = 
 "INSERT into suivi_alim ( num_alpage ,  nom_fichier,  date_cloture ,    db_cree )
-values ('$alpage','$file','$datecloture',0);";
+values ('$alpage', '$SqlStringFilename','$datecloture',0);";
     $dbhlog->do($REQ)
       or &trace( " Insert en table de suivi impossible", 'finko' );
     $log_seq = &recup_noseq;
