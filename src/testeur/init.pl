@@ -579,12 +579,12 @@ sub traitement() {
 		$file =~ s/[\.xml]*$/.dat/i;
 
 		$rc = system(
-	"${pref_chem}trt_xml$exe_ou_pl   -o \"$file\"  -f  \"$xml_file\"  -T EXERCICE  -t JOURNAL  -n $log_seq -e \"$line\" 2>${err_file}_xml"
+	"${pref_chem}trt_xml$exe_ou_pl   -o \"$file\"  -f  \"$xml_file\"  -T EXERCICE  -t JOURNAL  -n $log_seq -e \"$line\" 2> \"${err_file}_xml\""
 		);    # ajouter -d  pour activer les traces sur xml
 		if ( $rc > 0 ) { &finko("${err_file}_xml"); }
 
 		system(
-	"${pref_chem}trt_txt$exe_ou_pl \"$file\" P $siren $alpage $datecloture $err_file $pcg  $bic  \"$nom_societe\" \"$ctl\"  $log_seq  \"$conn_base\" \"$id\" "
+	"${pref_chem}trt_txt$exe_ou_pl \"$file\" P $siren $alpage $datecloture \"${err_file}\" $pcg $bic \"$nom_societe\" \"$ctl\" $log_seq \"$conn_base\" \"$id\""
 		);    #>$log_file 2>$err_file ");
 	}         # fin traitement xml_file
         else {    # traitement plat
@@ -620,11 +620,11 @@ sub traitement() {
                 #&finko("${err_file}_entete");
             }
             $rc = system(
-"${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture $err_file  $pcg $bic  \"$nom_societe\" \"$ctl\" $log_seq  \"$conn_base\" \"$id\" "
+"${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture \"${err_file}\" $pcg $bic \"$nom_societe\" \"$ctl\" $log_seq \"$conn_base\" \"$id\""
             );    #>$log_file 2>$err_file ");
             if ( $rc > 0 ) {
                 print STDERR
-"${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture $err_file  $pcg $bic  \"$nom_societe\" \"$ctl\" $log_seq   \"$conn_base\" \"$id\" "
+"${pref_chem}trt_txt$exe_ou_pl  \"$file\" $sep $siren $alpage $datecloture \"${err_file}\" $pcg $bic \"$nom_societe\" \"$ctl\" $log_seq \"$conn_base\" \"$id\""
                   ;    # &finko("${err_file}";
                 exit 1;
             } 
